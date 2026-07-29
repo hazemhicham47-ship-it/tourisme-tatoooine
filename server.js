@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cron = require('node-cron');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -20,6 +21,15 @@ mongoose.connect(MONGODB_URI)
     .catch(err => console.error('❌ خطأ في الاتصال بـ MongoDB:', err));
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
+
+// إعداد مرسل البريد الإلكتروني عبر Nodemailer باستخدام Gmail
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER, // بريدك على Gmail
+        pass: process.env.EMAIL_PASS  // كلمة مرور التطبيق المكونة من 16 حرفاً
+    }
+});
 
 // مخططات البيانات
 const DocumentSchema = new mongoose.Schema({
@@ -73,41 +83,28 @@ cron.schedule('* * * * *', async () => {
 
                     for (let recipientEmail of emailsList) {
                         try {
-                            const response = await fetch('https://api.resend.com/emails', {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    from: 'Acme <onboarding@resend.dev>',
-                                    to: [recipientEmail],
-                                    subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
-                                    text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
-                                })
-                            });
+                            const mailOptions = {
+                                from: `"مشروع تطاوين السياحي" <${process.env.EMAIL_USER}>`,
+                                to: recipientEmail,
+                                subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
+                                text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
+                            };
 
-                            const resData = await response.json();
-
-                            if (response.ok) {
-                                console.log(`📧 تم إرسال الإيميل بنجاح في موعده الدقيق إلى: ${recipientEmail} (ID: ${resData.id})`);
-                            } else {
-                                console.error(`❌ خطأ من Resend عند الإرسال إلى ${recipientEmail}:`, resData);
-                                allSentSuccessfully = false; // فشل الإرسال لأحد العناوين
-                            }
-                        } catch (fetchErr) {
-                            console.error(`❌ خطأ في الاتصال بالـ API:`, fetchErr);
+                            await transporter.sendMail(mailOptions);
+                            console.log(`📧 تم إرسال الإيميل بنجاح عبر Gmail إلى: ${recipientEmail}`);
+                        } catch (mailErr) {
+                            console.error(`❌ خطأ في إرسال البريد إلى ${recipientEmail}:`, mailErr);
                             allSentSuccessfully = false;
                         }
                     }
 
-                    // لا يتم تحديث حالة الإجراء إلى (sent: true) إلا إذا تم الإرسال بنجاح تام
+                    // تحديث الحالة إلى مكتمل فقط إذا تم الإرسال بنجاح
                     if (allSentSuccessfully) {
                         action.sent = true;
                         await action.save();
                         console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
                     } else {
-                        console.log(`⚠️ لم يتم تغيير حالة الإجراء إلى مكتمل نظراً لفشل إرسال بعض الإيميلات وستم إعادة المحاولة لاحقاً.`);
+                        console.log(`⚠️ لم يتم تغيير حالة الإجراء نظراً لفشل إرسال بعض الإيميلات.`);
                     }
                 }
             }
