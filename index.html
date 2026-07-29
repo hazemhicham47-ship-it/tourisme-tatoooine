@@ -352,7 +352,6 @@
                     const dept = act.department || 'عام';
                     const dateFormatted = act.remind_date ? act.remind_date.replace('T', ' | الوقت: ') : (act.due_date || 'غير محدد');
 
-                    // تجهيز عرض الإيميل والهاتف
                     const emailStr = act.email ? `📧 ${act.email}` : '';
                     const phoneStr = act.phone ? `📱 ${act.phone}` : '';
                     const contactInfo = [emailStr, phoneStr].filter(Boolean).join(' | ');
@@ -401,7 +400,6 @@
             document.getElementById('statUrgent').innerText = urgentCount;
         }
 
-        // بناء الأزرار الأفقية العائمة
         function renderButtons(docs) {
             const btnContainer = document.getElementById('deptButtonsContainer');
             let buttonsHtml = '';
@@ -420,12 +418,11 @@
             btnContainer.innerHTML = buttonsHtml;
         }
 
-        // التبديل بين الأقسام (إغلاق السلسلة السابقة وفتح القسم المحدد فقط)
         function toggleDept(deptName) {
             if (activeDept === deptName) {
-                activeDept = null; // إغلاق القسم عند التبويب عليه مجدداً
+                activeDept = null; 
             } else {
-                activeDept = deptName; // فتح القسم الجديد وإخفاء الأقسام الأخرى
+                activeDept = deptName; 
             }
 
             renderButtons(rawDocuments);
@@ -467,6 +464,9 @@
                             catch (e) { dateStr = doc.due_date; }
                         }
 
+                        // التحقق من وجود رابط الملف أو مساره لتمكين زر المعاينة للملفات المرفقة
+                        const fileLink = doc.file_url || doc.file_path || doc.url;
+
                         return `
                             <div class="item-row">
                                 <div>
@@ -476,8 +476,8 @@
                                         <span class="badge ${badgeClass}">${doc.status || 'قيد الانتظار'}</span>
                                     </div>
                                 </div>
-                                ${doc.file_url ? `
-                                    <a href="${doc.file_url}" target="_blank" class="btn-file">
+                                ${fileLink ? `
+                                    <a href="${fileLink}" target="_blank" class="btn-file">
                                         <span>👁️ معاينة المستند</span>
                                     </a>` : ''}
                             </div>
