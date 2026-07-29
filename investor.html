@@ -327,12 +327,14 @@
 
     <script>
         const HOST = window.location.hostname || '127.0.0.1';
-        const API_URL = 'https://tourisme-tatoooine.onrender.com/api';
+        const API_URL = 'https://tourism-backend.onrender.com/api';
         let rawDocuments = [];
         const departments = ["الجمعية", "معاملات الشركة", "ديوان السياحة", "أملاك الدولة", "الحماية المدنية"];
         
+        // القسم النشط حالياً ( افتراضياً الأول: "الجمعية" )
         let activeDept = "الجمعية"; 
 
+        // دالة جلب وعرض الإجراءات المزمعة
         async function fetchActions() {
             try {
                 const response = await fetch(`${API_URL}/actions`);
@@ -418,9 +420,9 @@
 
         function toggleDept(deptName) {
             if (activeDept === deptName) {
-                activeDept = null;
+                activeDept = null; 
             } else {
-                activeDept = deptName;
+                activeDept = deptName; 
             }
 
             renderButtons(rawDocuments);
@@ -462,6 +464,9 @@
                             catch (e) { dateStr = doc.due_date; }
                         }
 
+                        // التحقق من وجود رابط الملف أو مساره لتمكين زر المعاينة للملفات المرفقة
+                        const fileLink = doc.file_url || doc.file_path || doc.url;
+
                         return `
                             <div class="item-row">
                                 <div>
@@ -471,8 +476,8 @@
                                         <span class="badge ${badgeClass}">${doc.status || 'قيد الانتظار'}</span>
                                     </div>
                                 </div>
-                                ${doc.file_url ? `
-                                    <a href="${doc.file_url}" target="_blank" class="btn-file">
+                                ${fileLink ? `
+                                    <a href="${fileLink}" target="_blank" class="btn-file">
                                         <span>👁️ معاينة المستند</span>
                                     </a>` : ''}
                             </div>
