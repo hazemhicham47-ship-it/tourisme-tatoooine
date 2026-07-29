@@ -22,9 +22,10 @@ mongoose.connect(MONGODB_URI)
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
 
-// إعداد مرسل البريد الإلكتروني عبر Nodemailer باستخدام Gmail
+// إعداد مرسل البريد الإلكتروني مع فرض استخدام IPv4 لتجنب حظر الشبكة على Render
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    family: 4,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS 
@@ -64,7 +65,6 @@ cron.schedule('* * * * *', async () => {
 
         console.log(`⏰ [فحص دوري] الوقت المحلي للسيرفر: ${currentDate.toISOString().slice(0, 16).replace('T', ' ')}`);
 
-        // جلب الإجراءات غير المرسلة فقط
         const unSentActions = await Action.find({ sent: { $ne: true } });
         let pendingCount = 0;
 
