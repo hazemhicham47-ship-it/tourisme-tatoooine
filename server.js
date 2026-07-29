@@ -2,7 +2,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cron = require('node-cron');
-const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -21,16 +20,6 @@ mongoose.connect(MONGODB_URI)
     .catch(err => console.error('❌ خطأ في الاتصال بـ MongoDB:', err));
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
-
-// إعداد مرسل البريد الإلكتروني عبر Brevo SMTP Relay
-const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    auth: {
-        user: process.env.EMAIL_USER,    // بريدك المسجل في Brevo
-        pass: process.env.BREVO_API_KEY  // مفتاح الـ API الخاص بـ Brevo
-    }
-});
 
 // مخططات البيانات
 const DocumentSchema = new mongoose.Schema({
@@ -56,7 +45,7 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// --- نظام التنبيهات المجدولة عبر Brevo SMTP (Africa/Tunis) ---
+// --- نظام التنبيهات المجدولة عبر Brevo API (Africa/Tunis) ---
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
@@ -83,17 +72,34 @@ cron.schedule('* * * * *', async () => {
 
                     for (let recipientEmail of emailsList) {
                         try {
-                            const mailOptions = {
-                                from: `"مشروع تطاوين السياحي" <${process.env.EMAIL_USER}>`,
-                                to: recipientEmail,
-                                subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
-                                text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
-                            };
+                            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                                method: 'POST',
+                                headers: {
+                                    'accept': 'application/json',
+                                    'api-key': process.env.BREVO_API_KEY,
+                                    'content-type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    sender: {
+                                        name: "مشروع تطاوين السياحي",
+                                        email: process.env.EMAIL_USER
+                                    },
+                                    to: [{ email: recipientEmail }],
+                                    subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
+                                    textContent: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
+                                })
+                            });
 
-                            await transporter.sendMail(mailOptions);
-                            console.log(`📧 تم إرسال الإيميل بنجاح عبر Brevo SMTP إلى: ${recipientEmail}`);
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                console.log(`📧 تم إرسال الإيميل بنجاح عبر Brevo API إلى: ${recipientEmail}`);
+                            } else {
+                                console.error(`❌ خطأ من Brevo API عند الإرسال إلى ${recipientEmail}:`, JSON.stringify(data));
+                                allSentSuccessfully = false;
+                            }
                         } catch (mailErr) {
-                            console.error(`❌ خطأ دقيق في إرسال البريد إلى ${recipientEmail}:`, mailErr.message);
+                            console.error(`❌ خطأ شبكة في إرسال البريد إلى ${recipientEmail}:`, mailErr.message);
                             allSentSuccessfully = false;
                         }
                     }
