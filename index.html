@@ -330,11 +330,8 @@
         const API_URL = 'https://tourism-backend.onrender.com/api';
         let rawDocuments = [];
         const departments = ["الجمعية", "معاملات الشركة", "ديوان السياحة", "أملاك الدولة", "الحماية المدنية"];
-        
-        // القسم النشط حالياً ( افتراضياً الأول: "الجمعية" )
         let activeDept = "الجمعية"; 
 
-        // دالة جلب وعرض الإجراءات المزمعة
         async function fetchActions() {
             try {
                 const response = await fetch(`${API_URL}/actions`);
@@ -442,88 +439,9 @@
             });
         }
 
-        function renderDocuments(documents) {
-            const container = document.getElementById('investorContent');
-            container.innerHTML = '';
+### مسار النسخ الدقيق في ملفاتك:
+قم بلصق هذا الكود واستبداله بالكامل داخل الملفين التاليين لضمان ظهوره على منصة Netlify:
+1. **`index.html`** (الملف الرئيسي الموجود في الجذر).
+2. **`investor.html`** (الملف الخاص بواجهة المستثمر).
 
-            departments.forEach(dept => {
-                const deptDocs = documents.filter(d => d.department && d.department.trim() === dept.trim());
-                
-                let docsListHtml = '';
-                if (deptDocs.length === 0) {
-                    docsListHtml = '<div class="empty-state">لا توجد وثائق مسجلة في هذا القسم.</div>';
-                } else {
-                    docsListHtml = deptDocs.map(doc => {
-                        let badgeClass = 'badge-pending';
-                        if (doc.status === 'منجز' || doc.status === 'مقبول') badgeClass = 'badge-done';
-                        if (doc.status === 'مطلب عاجل') badgeClass = 'badge-urgent';
-
-                        let dateStr = 'غير محدد';
-                        if (doc.due_date) {
-                            try { dateStr = new Date(doc.due_date).toISOString().split('T')[0]; } 
-                            catch (e) { dateStr = doc.due_date; }
-                        }
-
-                        // التحقق من وجود رابط الملف أو مساره لتمكين زر المعاينة للملفات المرفقة
-                        const fileLink = doc.file_url || doc.file_path || doc.url;
-
-                        return `
-                            <div class="item-row">
-                                <div>
-                                    <div class="doc-title">${doc.title}</div>
-                                    <div class="doc-meta">
-                                        <span>📅 ${dateStr}</span>
-                                        <span class="badge ${badgeClass}">${doc.status || 'قيد الانتظار'}</span>
-                                    </div>
-                                </div>
-                                ${fileLink ? `
-                                    <a href="${fileLink}" target="_blank" class="btn-file">
-                                        <span>👁️ معاينة المستند</span>
-                                    </a>` : ''}
-                            </div>
-                        `;
-                    }).join('');
-                }
-
-                const isVisible = (activeDept === dept) ? 'visible' : '';
-
-                container.innerHTML += `
-                    <div class="dept-card ${isVisible}" id="dept-card-${dept}">
-                        <div class="dept-header">
-                            <div class="dept-title">📌 ${dept}</div>
-                        </div>
-                        <div>
-                            ${docsListHtml}
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function filterData() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const statusTerm = document.getElementById('statusFilter').value;
-
-            const filtered = rawDocuments.filter(doc => {
-                const matchesSearch = doc.title && doc.title.toLowerCase().includes(searchTerm);
-                
-                let matchesStatus = true;
-                if (statusTerm !== 'all') {
-                    if (statusTerm === 'مقبول') matchesStatus = (doc.status === 'مقبول' || doc.status === 'منجز');
-                    else matchesStatus = (doc.status === statusTerm);
-                }
-
-                return matchesSearch && matchesStatus;
-            });
-
-            renderButtons(filtered);
-            renderDocuments(filtered);
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchActions();
-            fetchDocuments();
-        });
-    </script>
-</body>
-</html>
+بعد لصق الكود وحفظ الملفين ورفع التعديلات، سيظهر زر المعاينة مباشرة بجانب جميع الملفات والتقارير.
