@@ -37,7 +37,7 @@ const ActionSchema = new mongoose.Schema({
     title: { type: String, required: true },
     action_title: { type: String },
     department: { type: String, required: true },
-    remind_date: { type: String }, // صيغة دقيقة: YYYY-MM-DDTHH:mm
+    remind_date: { type: String }, // صيغة: YYYY-MM-DDTHH:mm
     email: { type: String },
     phone: { type: String },
     sent: { type: Boolean, default: false },
@@ -45,61 +45,59 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// --- نظام التنبيهات المجدولة بالتوقيت المحلي بدقة (Africa/Tunis) ---
+// --- نظام التنبيهات المجدولة بمقارنة الأوقات الرقمية الدقيقة (Africa/Tunis) ---
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
         const localTimeStr = now.toLocaleString('en-US', { timeZone: 'Africa/Tunis' });
-        const localDate = new Date(localTimeStr);
+        const currentDate = new Date(localTimeStr);
 
-        const year = localDate.getFullYear();
-        const month = String(localDate.getMonth() + 1).padStart(2, '0');
-        const day = String(localDate.getDate()).padStart(2, '0');
-        const hours = String(localDate.getHours()).padStart(2, '0');
-        const minutes = String(localDate.getMinutes()).padStart(2, '0');
-        
-        const currentFormatted = `${year}-${month}-${day}T${hours}:${minutes}`;
+        console.log(`⏰ [فحص دوري] الوقت المحلي للسيرفر: ${currentDate.toISOString().slice(0, 16).replace('T', ' ')}`);
 
-        console.log(`⏰ [فحص دوري] الوقت المحلي للسيرفر: ${currentFormatted}`);
+        // جلب الإجراءات غير المرسلة فقط
+        const unSentActions = await Action.find({ sent: { $ne: true } });
+        let pendingCount = 0;
 
-        const pendingActions = await Action.find({ 
-            remind_date: { $lte: currentFormatted }, 
-            sent: { $ne: true }
-        });
+        for (let action of unSentActions) {
+            if (!action.remind_date) continue;
 
-        console.log(`🔍 عدد الإجراءات المستحقة المكتشفة: ${pendingActions.length}`);
+            // تحويل وقت التذكير المخزن إلى كائن تاريخ رقمي دقيق
+            const remindDateObj = new Date(action.remind_date.replace(' ', 'T'));
 
-        for (let action of pendingActions) {
-            console.log(`🚀 بدء معالجة الإجراء: ${action.title || action.action_title} (وقت التذكير المحدد: ${action.remind_date})`);
+            // التحقق حصراً إذا كان وقت التذكير قد حان أو فات فعلاً
+            if (remindDateObj.getTime() <= currentDate.getTime()) {
+                pendingCount++;
+                console.log(`🚀 بدء معالجة الإجراء المستحق: ${action.title || action.action_title} (المحدد: ${action.remind_date})`);
 
-            if (action.email) {
-                const emailsList = action.email.split(',').map(e => e.trim());
+                if (action.email) {
+                    const emailsList = action.email.split(',').map(e => e.trim());
 
-                for (let recipientEmail of emailsList) {
-                    try {
-                        const response = await fetch('https://api.resend.com/emails', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                from: 'Acme <onboarding@resend.dev>',
-                                to: [recipientEmail],
-                                subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
-                                text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
-                            })
-                        });
+                    for (let recipientEmail of emailsList) {
+                        try {
+                            const response = await fetch('https://api.resend.com/emails', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    from: 'Acme <onboarding@resend.dev>',
+                                    to: [recipientEmail],
+                                    subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
+                                    text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
+                                })
+                            });
 
-                        const resData = await response.json();
+                            const resData = await response.json();
 
-                        if (response.ok) {
-                            console.log(`📧 تم إرسال الإيميل بنجاح في موعده إلى: ${recipientEmail} (ID: ${resData.id})`);
-                        } else {
-                            console.error(`❌ خطأ من Resend عند الإرسال إلى ${recipientEmail}:`, resData);
+                            if (response.ok) {
+                                console.log(`📧 تم إرسال الإيميل بنجاح في موعده الدقيق إلى: ${recipientEmail} (ID: ${resData.id})`);
+                            } else {
+                                console.error(`❌ خطأ من Resend عند الإرسال إلى ${recipientEmail}:`, resData);
+                            }
+                        } catch (fetchErr) {
+                            console.error(`❌ خطأ في الاتصال بالـ API:`, fetchErr);
                         }
-                    } catch (fetchErr) {
-                        console.error(`❌ خطأ في الاتصال بالـ API:`, fetchErr);
                     }
                 }
 
@@ -108,6 +106,9 @@ cron.schedule('* * * * *', async () => {
                 console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
             }
         }
+
+        console.log(`🔍 عدد الإجراءات المستحقة المكتشفة الفعلي: ${pendingCount}`);
+
     } catch (err) {
         console.error('❌ خطأ في نظام التنبيهات المجدولة:', err);
     }
@@ -163,13 +164,11 @@ app.post('/api/actions', async (req, res) => {
     try {
         let formattedRemindDate = req.body.remind_date;
         
-        // تنظيف وتوحيد صيغة التاريخ لحذف أي ثوانٍ أو زوائد قد تسبب إرسالاً فورياً
         if (formattedRemindDate) {
-            // تحويل الصيغة من "YYYY-MM-DD HH:mm:ss" أو ما شابه إلى "YYYY-MM-DDTHH:mm" بدقة
             formattedRemindDate = formattedRemindDate.replace(' ', 'T').substring(0, 16);
         }
 
-        console.log(`📥 تم استقبال إجراء جديد بوقت تذكير موحد: ${formattedRemindDate}`);
+        console.log(`📥 تم استقبال إجراء جديد بوقت تذكير: ${formattedRemindDate}`);
 
         const newAction = new Action({ 
             ...req.body, 
