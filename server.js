@@ -45,21 +45,23 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// --- نظام التنبيهات المجدولة (مقارنة دقيقة بالدقيقة) ---
+// --- نظام التنبيهات المجدولة بالتوقيت المحلي بدقة (Africa/Tunis) ---
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const localTimeStr = now.toLocaleString('en-US', { timeZone: 'Africa/Tunis' });
+        const localDate = new Date(localTimeStr);
+
+        const year = localDate.getFullYear();
+        const month = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day = String(localDate.getDate()).padStart(2, '0');
+        const hours = String(localDate.getHours()).padStart(2, '0');
+        const minutes = String(localDate.getMinutes()).padStart(2, '0');
         
         const currentFormatted = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-        console.log(`⏰ [فحص دوري] وقت السيرفر: ${currentFormatted}`);
+        console.log(`⏰ [فحص دوري] الوقت المحلي للسيرفر: ${currentFormatted}`);
 
-        // البحث عن الإجراءات التي حان وقتها أو تجاوزته بدقة
         const pendingActions = await Action.find({ 
             remind_date: { $lte: currentFormatted }, 
             sent: { $ne: true }
@@ -68,7 +70,7 @@ cron.schedule('* * * * *', async () => {
         console.log(`🔍 عدد الإجراءات المستحقة المكتشفة: ${pendingActions.length}`);
 
         for (let action of pendingActions) {
-            console.log(`🚀 بدء معالجة الإجراء: ${action.title || action.action_title}`);
+            console.log(`🚀 بدء معالجة الإجراء: ${action.title || action.action_title} (وقت التذكير المحدد: ${action.remind_date})`);
 
             if (action.email) {
                 const emailsList = action.email.split(',').map(e => e.trim());
@@ -92,12 +94,12 @@ cron.schedule('* * * * *', async () => {
                         const resData = await response.json();
 
                         if (response.ok) {
-                            console.log(`📧 تم إرسال الإيميل بنجاح في الوقت المحدد إلى: ${recipientEmail} (ID: ${resData.id})`);
+                            console.log(`📧 تم إرسال الإيميل بنجاح في موعده إلى: ${recipientEmail} (ID: ${resData.id})`);
                         } else {
                             console.error(`❌ خطأ من Resend عند الإرسال إلى ${recipientEmail}:`, resData);
                         }
                     } catch (fetchErr) {
-                        console.error(`❌ خطأ في الإرسال:`, fetchErr);
+                        console.error(`❌ خطأ في الاتصال بالـ API:`, fetchErr);
                     }
                 }
 
@@ -107,7 +109,7 @@ cron.schedule('* * * * *', async () => {
             }
         }
     } catch (err) {
-        console.error('❌ خطأ في النظام:', err);
+        console.error('❌ خطأ في نظام التنبيهات المجدولة:', err);
     }
 });
 
@@ -159,10 +161,12 @@ app.get('/api/actions', async (req, res) => {
 
 app.post('/api/actions', async (req, res) => {
     try {
+        console.log(`📥 تم استقبال إجراء جديد بوقت تذكير: ${req.body.remind_date}`);
         const newAction = new Action({ ...req.body, sent: false });
         const saved = await newAction.save();
         res.status(201).json(saved);
     } catch (err) {
+        console.error('❌ فشل في حفظ الإجراء:', err);
         res.status(400).json({ error: "فشل في إضافة الإجراء" });
     }
 });
