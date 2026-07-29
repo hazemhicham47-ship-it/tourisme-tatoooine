@@ -5,8 +5,13 @@ require('dotenv').config();
 
 const app = express();
 
-// Middlewares
-app.use(cors());
+// إعداد CORS الشامل لتفادي أي حظر من المتصفح (CORS Error)
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // الاتصال بقاعدة البيانات MongoDB
@@ -15,10 +20,10 @@ mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ متصل بقاعدة بيانات MongoDB بنجاح'))
     .catch(err => console.error('❌ خطأ في الاتصال بـ MongoDB:', err));
 
-// تعريف كلمة المرور ودالة الحماية
+// كلمة المرور ودالة الحماية
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
 
-// Middleware للتأكد من وجود التوكن في عمليات التعديل والحذف والإضافة
+// Middleware للتأكد من وجود التوكن عند التعديل أو الحذف أو الإضافة
 const requireAuth = (req, res, next) => {
     const token = req.headers['authorization'];
     if (token === "admin-auth-secret-token") {
@@ -51,7 +56,7 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ success: false, message: "كلمة المرور غير صحيحة!" });
 });
 
-// 2. جلب جميع المستندات (متاح للجميع للقراءة)
+// 2. جلب جميع المستندات (متاح للجميع)
 app.get('/api/documents', async (req, res) => {
     try {
         const documents = await Document.find().sort({ date: -1 });
@@ -61,7 +66,7 @@ app.get('/api/documents', async (req, res) => {
     }
 });
 
-// 3. إضافة مستند جديد (محمي بـ requireAuth)
+// 3. إضافة مستند جديد (محمي)
 app.post('/api/documents', requireAuth, async (req, res) => {
     try {
         const newDoc = new Document(req.body);
@@ -72,7 +77,7 @@ app.post('/api/documents', requireAuth, async (req, res) => {
     }
 });
 
-// 4. تعديل مستند (محمي بـ requireAuth)
+// 4. تعديل مستند (محمي)
 app.put('/api/documents/:id', requireAuth, async (req, res) => {
     try {
         const updatedDoc = await Document.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -82,7 +87,7 @@ app.put('/api/documents/:id', requireAuth, async (req, res) => {
     }
 });
 
-// 5. حذف مستند (محمي بـ requireAuth)
+// 5. حذف مستند (محمي)
 app.delete('/api/documents/:id', requireAuth, async (req, res) => {
     try {
         await Document.findByIdAndDelete(req.params.id);

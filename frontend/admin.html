@@ -3,532 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - إدارة الملفات والإجراءات المزمعة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>لوحة التحكم - إدارة المستندات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #1e293b;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --danger: #dc2626;
-            --danger-bg: #fee2e2;
-            --success: #16a34a;
-        }
-
-        * { box-sizing: border-box; font-family: 'Tajawal', system-ui, sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--bg); color: var(--text-main); padding: 25px 20px; line-height: 1.5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-
-        .header { 
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
-            color: white; 
-            padding: 25px 30px; 
-            border-radius: 16px; 
-            text-align: center; 
-            margin-bottom: 25px;
-        }
-        .header h2 { font-size: 1.8rem; font-weight: 700; }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            align-items: start;
-        }
-
-        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 14px;
-            padding: 24px;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
-            margin-bottom: 25px;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 10px;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: #f1f5f9;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            color: var(--text-muted);
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: var(--accent);
-            color: white;
-        }
-
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.88rem; color: var(--primary); }
-        .form-control {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.92rem;
-            outline: none;
-            background: #ffffff;
-        }
-        .form-control:focus { border-color: var(--accent); }
-
-        .btn-submit {
-            width: 100%;
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .doc-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 14px;
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-bottom: 8px;
-        }
-        .doc-title { font-weight: 700; font-size: 0.95rem; color: var(--primary); }
-        .doc-meta { font-size: 0.8rem; color: var(--text-muted); }
-
-        .doc-actions { display: flex; gap: 6px; }
-        .btn-action {
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-        }
-        .btn-view { background: #e0f2fe; color: #0369a1; }
-        .btn-status { background: #fef3c7; color: #b45309; }
-        .btn-delete { background: var(--danger-bg); color: var(--danger); }
-
-        .dept-section { margin-bottom: 20px; }
-        .dept-section-title { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>⚙️ لوحة التحكم - المستندات والإجراءات المزمعة</h2>
-        </div>
+<body class="bg-gray-100 text-gray-800">
 
-        <div class="main-grid">
-            <!-- Right Column: Add Forms -->
-            <div>
-                <div class="card">
-                    <div class="tab-buttons">
-                        <button class="tab-btn active" id="tabDocBtn" onclick="switchTab('doc')">📄 وثيقة / مستند</button>
-                        <button class="tab-btn" id="tabActionBtn" onclick="switchTab('action')">⏰ إجراء مزمع للتذكير</button>
-                    </div>
-
-                    <!-- 1. Form: Add Document -->
-                    <form id="addDocForm" enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label>عنوان المستند / المطلب:</label>
-                            <input type="text" name="title" class="form-control" placeholder="مثال: التقرير المالي" required>
-                        </div>
-                        <div class="form-group">
-                            <label>الجهة / القسم:</label>
-                            <select name="department" class="form-control" required>
-                                <option value="الجمعية">👥 الجمعية</option>
-                                <option value="معاملات الشركة">🏢 معاملات الشركة</option>
-                                <option value="ديوان السياحة">🏛️ ديوان السياحة</option>
-                                <option value="أملاك الدولة">📑 أملاك الدولة</option>
-                                <option value="الحماية المدنية">🚒 الحماية المدنية</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>الحالة / الأولوية:</label>
-                            <select name="status" class="form-control" required>
-                                <option value="مقبول">مقبول / منجز</option>
-                                <option value="قيد الدراسة">قيد الدراسة / قيد الانتظار</option>
-                                <option value="مطلب عاجل">مطلب عاجل</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>تاريخ الاستحقاق:</label>
-                            <input type="date" name="due_date" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>اختر الملف (PDF / صورة):</label>
-                            <input type="file" name="file" class="form-control" accept="image/*,.pdf">
-                        </div>
-                        <button type="submit" class="btn-submit">➕ إضافة الوثيقة</button>
-                    </form>
-
-                    <!-- 2. Form: Add Action / Reminder -->
-                    <form id="addActionForm" style="display: none;">
-                        <div class="form-group">
-                            <label>عنوان الإجراء المزمع:</label>
-                            <input type="text" name="action_title" class="form-control" placeholder="مثال: تقديم مطلب تجديد الرخصة" required>
-                        </div>
-                        <div class="form-group">
-                            <label>الجهة / القسم:</label>
-                            <select name="department" class="form-control" required>
-                                <option value="الجمعية">👥 الجمعية</option>
-                                <option value="معاملات الشركة">🏢 معاملات الشركة</option>
-                                <option value="ديوان السياحة">🏛️ ديوان السياحة</option>
-                                <option value="أملاك الدولة">📑 أملاك الدولة</option>
-                                <option value="الحماية المدنية">🚒 الحماية المدنية</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>تاريخ ووقت التذكير (قبل الموعد):</label>
-                            <input type="datetime-local" name="remind_date" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label>البريد الإلكتروني لإرسال التنبيه (Email):</label>
-                            <input type="email" name="email" class="form-control" placeholder="user@example.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label>رقم الهاتف للتنبيه عبر (SMS):</label>
-                            <input type="tel" name="phone" class="form-control" placeholder="+216 98 000 000">
-                        </div>
-                        <button type="submit" class="btn-submit" style="background: var(--accent);">🔔 جدولة التذكير</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Left Column: Display Lists -->
-            <div>
-                <!-- Actions List -->
-                <div class="card">
-                    <div class="dept-section-title">⏰ الإجراءات المزمعة للتذكير</div>
-                    <div id="actionsList">⏳ جاري التحميل...</div>
-                </div>
-
-                <!-- Documents List -->
-                <div class="card">
-                    <div class="dept-section-title">📂 وثائق ومستندات الأقسام</div>
-                    <div id="documentsList">⏳ جاري التحميل...</div>
-                </div>
-            </div>
+    <!-- نافذة تسجيل الدخول بكلمة المرور -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-96 text-center">
+            <h2 class="text-xl font-bold mb-4 text-gray-800"><i class="fas fa-lock text-yellow-500 ml-2"></i>تسجيل دخول الأدمن</h2>
+            <p class="text-sm text-gray-600 mb-4">يرجى إدخال كلمة المرور للوصول للوحة التحكم وإدارة المستندات.</p>
+            <input type="password" id="adminPasswordInput" placeholder="أدخل كلمة المرور" class="w-full border border-gray-300 p-2 rounded mb-4 text-center focus:outline-none focus:border-blue-500">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-bold">دخول</button>
+            <p id="loginError" class="text-red-500 text-sm mt-3 hidden"></p>
         </div>
     </div>
 
-    <script>
-        const HOST = window.location.hostname || '127.0.0.1';
-        const API_URL = 'https://tourisme-tatoooine.onrender.com/api';
-        const departments = ["الجمعية", "معاملات الشركة", "ديوان السياحة", "أملاك الدولة", "الحماية المدنية"];
-
-        let cachedActions = [];
-
-        function switchTab(type) {
-            if (type === 'doc') {
-                document.getElementById('addDocForm').style.display = 'block';
-                document.getElementById('addActionForm').style.display = 'none';
-                document.getElementById('tabDocBtn').classList.add('active');
-                document.getElementById('tabActionBtn').classList.remove('active');
-            } else {
-                document.getElementById('addDocForm').style.display = 'none';
-                document.getElementById('addActionForm').style.display = 'block';
-                document.getElementById('tabDocBtn').classList.remove('active');
-                document.getElementById('tabActionBtn').classList.add('active');
-            }
-        }
-
-        async function fetchData() {
-            await Promise.all([fetchDocs(), fetchActions()]);
-        }
-
-        async function fetchDocs() {
-            try {
-                const res = await fetch(`${API_URL}/documents`);
-                if (!res.ok) throw new Error('فشل جلب البيانات');
-                const docs = await res.json();
-                renderDocuments(docs);
-            } catch (err) {
-                console.error(err);
-                document.getElementById('documentsList').innerHTML = '<p style="font-size:0.85rem; color:#dc2626;">فشل تحميل الوثائق.</p>';
-            }
-        }
-
-        async function fetchActions() {
-            try {
-                const res = await fetch(`${API_URL}/actions`);
-                if (!res.ok) throw new Error('فشل جلب البيانات');
-                cachedActions = await res.json();
-                renderActions(cachedActions);
-            } catch (err) {
-                console.error(err);
-                document.getElementById('actionsList').innerHTML = '<p style="font-size:0.85rem; color:#dc2626;">فشل تحميل الإجراءات.</p>';
-            }
-        }
-
-        function renderDocuments(docs) {
-            const container = document.getElementById('documentsList');
-            container.innerHTML = '';
-            departments.forEach(dept => {
-                const deptDocs = docs.filter(d => d.department === dept);
-                let docsHtml = deptDocs.length === 0 ? '<p style="font-size:0.8rem; color:#94a3b8;">لا توجد وثائق.</p>' :
-                    deptDocs.map(doc => {
-                        const docId = doc._id || doc.id;
-                        return `
-                        <div class="doc-item">
-                            <div>
-                                <div class="doc-title">${doc.title}</div>
-                                <div class="doc-meta">الحالة: ${doc.status}</div>
-                            </div>
-                            <div class="doc-actions">
-                                ${doc.file_url ? `<a href="${doc.file_url}" target="_blank" class="btn-action btn-view">👁️</a>` : ''}
-                                <button onclick="updateStatus('${docId}')" class="btn-action btn-status">✏️</button>
-                                <button onclick="deleteDoc('${docId}')" class="btn-action btn-delete">🗑️</button>
-                            </div>
-                        </div>`;
-                    }).join('');
-                container.innerHTML += `<div class="dept-section"><div class="dept-section-title">📌 ${dept} (${deptDocs.length})</div>${docsHtml}</div>`;
-            });
-        }
-
-        function renderActions(actions) {
-            const container = document.getElementById('actionsList');
-            if (!actions || actions.length === 0) {
-                container.innerHTML = '<p style="font-size:0.85rem; color:#94a3b8;">لا توجد إجراءات مزمعة حالياً.</p>';
-                return;
-            }
-            container.innerHTML = actions.map(act => {
-                const actId = act._id || act.id;
-                return `
-                <div class="doc-item" style="border-right: 4px solid var(--accent);">
-                    <div>
-                        <div class="doc-title">⏰ ${act.action_title || act.title || 'إجراء بدون عنوان'}</div>
-                        <div class="doc-meta">الجهة: ${act.department || '-'} | التذكير: ${act.remind_date ? act.remind_date.replace('T', ' ').slice(0, 16) : '-'}</div>
-                    </div>
-                    <div class="doc-actions">
-                        <button onclick="viewAction('${actId}')" class="btn-action btn-view">👁️ عرض</button>
-                        <button onclick="editAction('${actId}')" class="btn-action btn-status">✏️ تعديل</button>
-                        <button onclick="deleteAction('${actId}')" class="btn-action btn-delete">🗑️ مسح</button>
-                    </div>
+    <!-- المحتوى الرئيسي للوحة التحكم -->
+    <div id="adminContent" class="hidden min-h-screen">
+        <!-- الهيدر -->
+        <header class="bg-slate-800 text-white p-4 shadow-md">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold"><i class="fas fa-user-shield ml-2"></i>لوحة تحكم إدارة المستندات والوثائق</h1>
+                <div class="flex items-center space-x-4 space-x-reverse">
+                    <a href="investor.html" target="_blank" class="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded text-sm"><i class="fas fa-eye ml-1"></i>معاينة بوابة المستثمر</a>
+                    <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-sm"><i class="fas fa-sign-out-alt ml-1"></i>خروج</button>
                 </div>
-            `}).join('');
-        }
+            </div>
+        </header>
 
-        document.getElementById('addActionForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
+        <main class="container mx-auto p-4 md:p-6">
+            <!-- نموذج إضافة/تعديل وثيقة -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 id="formTitle" class="text-lg font-bold mb-4 text-slate-700 border-b pb-2"><i class="fas fa-plus-circle ml-2"></i>إضافة وثيقة جديدة</h2>
+                <form id="documentForm" onsubmit="saveDocument(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" id="docId">
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">عنوان الوثيقة/المستند</label>
+                        <input type="text" id="title" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
 
-            if (data.remind_date) {
-                data.remind_date = data.remind_date.replace('T', ' ') + ':00';
+                    <div>
+                        <label class="block text-sm font-medium mb-1">القسم / التصنيف</label>
+                        <input type="text" id="category" required placeholder="مثال: تراخيص، دراسة جدوى..." class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">حالة المستند</label>
+                        <select id="status" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="مقبول">مقبول</option>
+                            <option value="قيد المراجعة">قيد المراجعة</option>
+                            <option value="مرفوض">مرفوض</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">رابط الملف (URL)</label>
+                        <input type="url" id="fileUrl" placeholder="https://..." class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div class="flex items-center space-x-2 space-x-reverse md:col-span-2 my-2">
+                        <input type="checkbox" id="urgent" class="w-4 h-4 text-red-600 rounded">
+                        <label for="urgent" class="text-sm font-medium text-red-600">تعليم كـ "طلب عاجل / تذكير هام"</label>
+                    </div>
+
+                    <div class="md:col-span-2 flex space-x-2 space-x-reverse">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-bold transition"><i class="fas fa-save ml-1"></i>حفظ البيانات</button>
+                        <button type="button" onclick="resetForm()" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- جدول عرض المستندات -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+                    <h3 class="font-bold text-slate-700"><i class="fas fa-list ml-2"></i>قائمة المستندات المرفوعة</h3>
+                    <button onclick="fetchDocuments()" class="text-sm bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded"><i class="fas fa-sync-alt ml-1"></i>تحديث</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b text-sm text-slate-600">
+                                <th class="p-3">العنوان</th>
+                                <th class="p-3">القسم</th>
+                                <th class="p-3">الحالة</th>
+                                <th class="p-3">عاجل</th>
+                                <th class="p-3">الرابط</th>
+                                <th class="p-3 text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentsTable" class="divide-y text-sm">
+                            <!-- سيتم إدراج البيانات هنا بواسطة JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'https://tourisme-tatoooine.onrender.com/api';
+
+        // التأكد من تسجيل الدخول عند تحميل الصفحة
+        window.onload = () => {
+            const token = localStorage.getItem('adminToken');
+            if (token === "admin-auth-secret-token") {
+                showAdminPanel();
             }
-            data.title = data.action_title;
+        };
+
+        async function handleLogin() {
+            const password = document.getElementById('adminPasswordInput').value;
+            const errorElement = document.getElementById('loginError');
+            errorElement.classList.add('hidden');
 
             try {
-                const res = await fetch(`${API_URL}/actions`, {
+                const res = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({ password })
                 });
-                if (res.ok) {
-                    Swal.fire('تمت الجدولة!', 'سيتم إرسال الإيميل والرسالة عند حلول الوقت المحدد', 'success');
-                    e.target.reset();
-                    fetchActions();
-                } else {
-                    throw new Error();
-                }
-            } catch (err) { Swal.fire('خطأ', 'تعذر إضافة الإجراء', 'error'); }
-        });
 
-        document.getElementById('addDocForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('adminToken', data.token);
+                    showAdminPanel();
+                } else {
+                    errorElement.innerText = data.message || "كلمة المرور غير صحيحة";
+                    errorElement.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorElement.innerText = "تعذر الاتصال بالسيرفر. تأكد من تشغيل السيرفر.";
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        function showAdminPanel() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('adminContent').classList.remove('hidden');
+            fetchDocuments();
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            location.reload();
+        }
+
+        // جلب المستندات
+        async function fetchDocuments() {
             try {
-                const res = await fetch(`${API_URL}/documents`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data) 
+                const res = await fetch(`${API_URL}/documents`);
+                const docs = await res.json();
+                renderTable(docs);
+            } catch (err) {
+                alert('خطأ في جلب المستندات');
+            }
+        }
+
+        // عرض جدول المستندات
+        function renderTable(docs) {
+            const tbody = document.getElementById('documentsTable');
+            tbody.innerHTML = '';
+
+            docs.forEach(doc => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold">${doc.title}</td>
+                    <td class="p-3">${doc.category}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs ${getStatusClass(doc.status)}">${doc.status}</span></td>
+                    <td class="p-3">${doc.urgent ? '🚨 نعم' : 'لا'}</td>
+                    <td class="p-3">${doc.fileUrl ? `<a href="${doc.fileUrl}" target="_blank" class="text-blue-600 hover:underline"><i class="fas fa-external-link-alt"></i></a>` : '-'}</td>
+                    <td class="p-3 text-center space-x-2 space-x-reverse">
+                        <button onclick='editDocument(${JSON.stringify(doc)})' class="text-blue-600 hover:text-blue-800 font-medium"><i class="fas fa-edit ml-1"></i>تعديل</button>
+                        <button onclick="deleteDocument('${doc._id}')" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-trash ml-1"></i>حذف</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getStatusClass(status) {
+            if (status === 'مقبول') return 'bg-green-100 text-green-800';
+            if (status === 'قيد المراجعة') return 'bg-yellow-100 text-yellow-800';
+            return 'bg-red-100 text-red-800';
+        }
+
+        // حفظ / تعديل مستند (يتضمن Authorization Header)
+        async function saveDocument(e) {
+            e.preventDefault();
+            const id = document.getElementById('docId').value;
+            const docData = {
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                status: document.getElementById('status').value,
+                fileUrl: document.getElementById('fileUrl').value,
+                urgent: document.getElementById('urgent').checked
+            };
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/documents/${id}` : `${API_URL}/documents`;
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': localStorage.getItem('adminToken')
+                    },
+                    body: JSON.stringify(docData)
                 });
+
                 if (res.ok) {
-                    Swal.fire('تمت الإضافة!', 'تم حفظ الوثيقة بنجاح', 'success');
-                    e.target.reset();
-                    fetchDocs();
+                    resetForm();
+                    fetchDocuments();
                 } else {
-                    throw new Error();
+                    const err = await res.json();
+                    alert(err.error || 'فشلت العملية');
                 }
-            } catch (err) { Swal.fire('خطأ', 'فشل الحفظ', 'error'); }
-        });
-
-        async function updateStatus(id) {
-            const { value: newStatus } = await Swal.fire({
-                title: 'تغيير حالة الوثيقة',
-                input: 'select',
-                inputOptions: { 'مقبول': 'مقبول / منجز', 'قيد الدراسة': 'قيد الدراسة', 'مطلب عاجل': 'مطلب عاجل' },
-                showCancelButton: true,
-                confirmButtonText: 'تحديث',
-                cancelButtonText: 'إلغاء'
-            });
-            if (newStatus) {
-                try {
-                    await fetch(`${API_URL}/documents/${id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: newStatus })
-                    });
-                    fetchDocs();
-                } catch (err) {
-                    Swal.fire('خطأ', 'تعذر تغيير الحالة', 'error');
-                }
+            } catch (err) {
+                alert('خطأ في الاتصال بالسيرفر');
             }
         }
 
-        async function viewAction(id) {
-            let act = cachedActions.find(a => (a._id || a.id) == id);
-            if (act) {
-                Swal.fire({
-                    title: `⏰ ${act.action_title || act.title || 'تفاصيل الإجراء'}`,
-                    html: `
-                        <div style="text-align: right; line-height: 1.8;">
-                            <p><strong>الجهة:</strong> ${act.department || '-'}</p>
-                            <p><strong>تاريخ التذكير:</strong> ${act.remind_date ? act.remind_date.replace('T', ' ').slice(0, 16) : '-'}</p>
-                            <p><strong>البريد الإلكتروني:</strong> ${act.email || '-'}</p>
-                            <p><strong>الهاتف:</strong> ${act.phone || '-'}</p>
-                        </div>
-                    `,
-                    icon: 'info',
-                    confirmButtonText: 'إغلاق'
+        function editDocument(doc) {
+            document.getElementById('docId').value = doc._id;
+            document.getElementById('title').value = doc.title;
+            document.getElementById('category').value = doc.category;
+            document.getElementById('status').value = doc.status;
+            document.getElementById('fileUrl').value = doc.fileUrl || '';
+            document.getElementById('urgent').checked = doc.urgent;
+            document.getElementById('formTitle').innerText = 'تعديل وثيقة';
+        }
+
+        function resetForm() {
+            document.getElementById('documentForm').reset();
+            document.getElementById('docId').value = '';
+            document.getElementById('formTitle').innerText = 'إضافة وثيقة جديدة';
+        }
+
+        // حذف مستند
+        async function deleteDocument(id) {
+            if (!confirm('هل أنت تأكد من حذف هذه الوثيقة؟')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/documents/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': localStorage.getItem('adminToken')
+                    }
                 });
-            } else {
-                Swal.fire('خطأ', 'تعذر جلب تفاصيل الإجراء', 'error');
-            }
-        }
 
-        async function editAction(id) {
-            let act = cachedActions.find(a => (a._id || a.id) == id);
-
-            if (!act) {
-                Swal.fire('خطأ', 'تعذر العثور على بيانات الإجراء لتعديله', 'error');
-                return;
-            }
-
-            let formattedDate = '';
-            if (act.remind_date) {
-                formattedDate = act.remind_date.replace(' ', 'T').slice(0, 16);
-            }
-
-            const { value: formValues } = await Swal.fire({
-                title: 'تعديل الإجراء المزمع',
-                html: `
-                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; font-size: 0.85rem;">عنوان الإجراء:</div>
-                    <input id="swal-title" class="swal2-input" style="margin-top:0;" placeholder="عنوان الإجراء" value="${act.action_title || act.title || ''}">
-                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; margin-top: 8px; font-size: 0.85rem;">تاريخ ووقت التذكير:</div>
-                    <input id="swal-date" type="datetime-local" class="swal2-input" style="margin-top:0;" value="${formattedDate}">
-                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; margin-top: 8px; font-size: 0.85rem;">البريد الإلكتروني:</div>
-                    <input id="swal-email" type="email" class="swal2-input" style="margin-top:0;" placeholder="البريد الإلكتروني" value="${act.email || ''}">
-                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; margin-top: 8px; font-size: 0.85rem;">رقم الهاتف:</div>
-                    <input id="swal-phone" type="tel" class="swal2-input" style="margin-top:0;" placeholder="رقم الهاتف" value="${act.phone || ''}">
-                `,
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'حفظ التعديلات',
-                cancelButtonText: 'إلغاء',
-                preConfirm: () => {
-                    const titleVal = document.getElementById('swal-title').value;
-                    const rawDate = document.getElementById('swal-date').value;
-                    
-                    let formattedDbDate = rawDate;
-                    if (rawDate) {
-                        formattedDbDate = rawDate.replace('T', ' ') + ':00';
-                    }
-
-                    return {
-                        id: id,
-                        title: titleVal,
-                        action_title: titleVal,
-                        remind_date: formattedDbDate,
-                        email: document.getElementById('swal-email').value,
-                        phone: document.getElementById('swal-phone').value,
-                        department: act.department || 'الجمعية'
-                    };
-                }
-            });
-
-            if (formValues) {
-                const attempts = [
-                    { url: `${API_URL}/actions/${id}`, method: 'PUT' },
-                    { url: `${API_URL}/actions/${id}`, method: 'PATCH' },
-                    { url: `${API_URL}/actions/${id}`, method: 'POST' },
-                    { url: `${API_URL}/actions/update/${id}`, method: 'POST' },
-                    { url: `${API_URL}/actions/update`, method: 'POST' }
-                ];
-
-                let success = false;
-
-                for (let reqConfig of attempts) {
-                    try {
-                        let res = await fetch(reqConfig.url, {
-                            method: reqConfig.method,
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(formValues)
-                        });
-
-                        if (res.ok) {
-                            success = true;
-                            break;
-                        }
-                    } catch (e) {
-                        console.log(`فشلت المحاولة عبر ${reqConfig.method} ${reqConfig.url}`);
-                    }
-                }
-
-                if (success) {
-                    Swal.fire('تم التعديل!', 'تمت تحديث بيانات الإجراء بنجاح', 'success');
-                    fetchActions();
+                if (res.ok) {
+                    fetchDocuments();
                 } else {
-                    Swal.fire('خطأ 404', 'مسار التعديل غير معرّف في السيرفر. يرجى التأكد من إضافة كود app.put("/api/actions/:id") في السيرفر.', 'error');
+                    const err = await res.json();
+                    alert(err.error || 'فشلت عملية الحذف');
                 }
+            } catch (err) {
+                alert('خطأ في الاتصال بالسيرفر');
             }
         }
-
-        async function deleteDoc(id) {
-            if (confirm('مسح الوثيقة؟')) {
-                try {
-                    await fetch(`${API_URL}/documents/${id}`, { method: 'DELETE' });
-                    fetchDocs();
-                } catch (err) {
-                    Swal.fire('خطأ', 'تعذر حذف الوثيقة', 'error');
-                }
-            }
-        }
-
-        async function deleteAction(id) {
-            if (confirm('حذف هذا التذكير؟')) {
-                try {
-                    await fetch(`${API_URL}/actions/${id}`, { method: 'DELETE' });
-                    fetchActions();
-                } catch (err) {
-                    Swal.fire('خطأ', 'تعذر حذف التذكير', 'error');
-                }
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', fetchData);
     </script>
 </body>
 </html>
