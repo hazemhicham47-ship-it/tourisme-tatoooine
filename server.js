@@ -1,133 +1,99 @@
-// server.js المحدث للعمل مع MongoDB
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
-require('dotenv').config(); // تحميل متغيرات البيئة
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// 1. الإعدادات (Middleware)
+// Middlewares
 app.use(cors());
-app.use(express.json()); // للسماح بقراءة بيانات JSON في الطلبات
+app.use(express.json());
 
-// 2. الاتصال بقاعدة البيانات MongoDB
-// سنحصل على الرابط من متغيرات البيئة للحماية
-const MONGODB_URI = process.env.MONGODB_URI; 
-
+// الاتصال بقاعدة البيانات MongoDB
+const MONGODB_URI = process.env.MONGODB_URI;
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ متصل بقاعدة بيانات MongoDB بنجاح'))
-  .catch(err => console.error('❌ خطأ في الاتصال بـ MongoDB:', err));
+    .then(() => console.log('✅ متصل بقاعدة بيانات MongoDB بنجاح'))
+    .catch(err => console.error('❌ خطأ في الاتصال بـ MongoDB:', err));
 
-// 3. تعريف "الهياكل" (Schemas & Models) للبيانات
-// هذا يحدد شكل البيانات في قاعدة البيانات
+// تعريف كلمة المرور ودالة الحماية
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
 
-// هيكل الوثائق
-const documentSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: String,
-  status: { type: String, default: 'قيد الانتظار' }, // قيد الانتظار، مقبول، مرفوض
-  date: { type: Date, default: Date.now }
+// Middleware للتأكد من وجود التوكن في عمليات التعديل والحذف والإضافة
+const requireAuth = (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (token === "admin-auth-secret-token") {
+        next();
+    } else {
+        res.status(401).json({ error: "غير مصرح لك للقيام بهذه العملية! يرجى تسجيل الدخول أولاً." });
+    }
+};
+
+// مخطط الشريحة / المستند (Document Schema)
+const DocumentSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    category: { type: String, required: true },
+    status: { type: String, default: 'مقبول' },
+    urgent: { type: Boolean, default: false },
+    fileUrl: { type: String, default: '' },
+    date: { type: Date, default: Date.now }
 });
-const Document = mongoose.model('Document', documentSchema);
 
-// هيكل الإجراءات
-const actionSchema = new mongoose.Schema({
-  text: { type: String, required: true },
-  type: { type: String, default: 'info' }, // info, warning, success
-  date: { type: Date, default: Date.now }
+const Document = mongoose.model('Document', DocumentSchema);
+
+// --- المسارات (Routes) ---
+
+// 1. مسار تسجيل الدخول للأدمن
+app.post('/api/login', (req, res) => {
+    const { password } = req.body;
+    if (password === ADMIN_PASSWORD) {
+        return res.json({ success: true, token: "admin-auth-secret-token" });
+    }
+    res.status(401).json({ success: false, message: "كلمة المرور غير صحيحة!" });
 });
-const Action = mongoose.model('Action', actionSchema);
 
-
-// 4. مسارات الـ API (Routes) - عمليات CRUD كاملة
-
-// --- أ. مسارات الوثائق (Documents) ---
-
-// 1. جلب جميع الوثائق (READ)
+// 2. جلب جميع المستندات (متاح للجميع للقراءة)
 app.get('/api/documents', async (req, res) => {
-  try {
-    const documents = await Document.find().sort({ date: -1 }); // جلبها مرتبة بالأحدث
-    res.json(documents);
-  } catch (err) {
-    res.status(500).json({ message: 'خطأ في جلب الوثائق', error: err.message });
-  }
+    try {
+        const documents = await Document.find().sort({ date: -1 });
+        res.json(documents);
+    } catch (err) {
+        res.status(500).json({ error: "خطأ في جلب البيانات من السيرفر" });
+    }
 });
 
-// 2. إضافة وثيقة جديدة (CREATE)
-app.post('/api/documents', async (req, res) => {
-  const doc = new Document({
-    title: req.body.title,
-    description: req.body.description,
-    status: req.body.status
-  });
-
-  try {
-    const newDoc = await doc.save();
-    res.status(201).json(newDoc);
-  } catch (err) {
-    res.status(400).json({ message: 'خطأ في إضافة الوثيقة', error: err.message });
-  }
+// 3. إضافة مستند جديد (محمي بـ requireAuth)
+app.post('/api/documents', requireAuth, async (req, res) => {
+    try {
+        const newDoc = new Document(req.body);
+        const savedDoc = await newDoc.save();
+        res.status(201).json(savedDoc);
+    } catch (err) {
+        res.status(400).json({ error: "فشل في إضافة المستند" });
+    }
 });
 
-// 3. تعديل وثيقة موجودة (UPDATE)
-app.put('/api/documents/:id', async (req, res) => {
-  try {
-    const updatedDoc = await Document.findByIdAndUpdate(
-      req.params.id, 
-      req.body, 
-      { new: true } // لإعادة الوثيقة بعد التعديل
-    );
-    if (!updatedDoc) return res.status(404).json({ message: 'الوثيقة غير موجودة' });
-    res.json(updatedDoc);
-  } catch (err) {
-    res.status(400).json({ message: 'خطأ في تعديل الوثيقة', error: err.message });
-  }
+// 4. تعديل مستند (محمي بـ requireAuth)
+app.put('/api/documents/:id', requireAuth, async (req, res) => {
+    try {
+        const updatedDoc = await Document.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updatedDoc);
+    } catch (err) {
+        res.status(400).json({ error: "فشل في تعديل المستند" });
+    }
 });
 
-// 4. حذف وثيقة (DELETE)
-app.delete('/api/documents/:id', async (req, res) => {
-  try {
-    const deletedDoc = await Document.findByIdAndDelete(req.params.id);
-    if (!deletedDoc) return res.status(404).json({ message: 'الوثيقة غير موجودة' });
-    res.json({ message: 'تم حذف الوثيقة بنجاح' });
-  } catch (err) {
-    res.status(500).json({ message: 'خطأ في حذف الوثيقة', error: err.message });
-  }
+// 5. حذف مستند (محمي بـ requireAuth)
+app.delete('/api/documents/:id', requireAuth, async (req, res) => {
+    try {
+        await Document.findByIdAndDelete(req.params.id);
+        res.json({ message: "تم حذف المستند بنجاح" });
+    } catch (err) {
+        res.status(400).json({ error: "فشل في حذف المستند" });
+    }
 });
 
-
-// --- ب. مسارات الإجراءات (Actions) ---
-
-// 1. جلب جميع الإجراءات (READ)
-app.get('/api/actions', async (req, res) => {
-  try {
-    const actions = await Action.find().sort({ date: -1 });
-    res.json(actions);
-  } catch (err) {
-    res.status(500).json({ message: 'خطأ في جلب الإجراءات', error: err.message });
-  }
-});
-
-// 2. إضافة إجراء جديد (CREATE)
-app.post('/api/actions', async (req, res) => {
-  const action = new Action({
-    text: req.body.text,
-    type: req.body.type
-  });
-
-  try {
-    const newAction = await action.save();
-    res.status(201).json(newAction);
-  } catch (err) {
-    res.status(400).json({ message: 'خطأ في إضافة الإجراء', error: err.message });
-  }
-});
-
-// (يمكنك إضافة مسارات التعديل والحذف للإجراءات هنا بنفس الطريقة إذا احتجتها لاحقاً)
-
-
-// 5. تشغيل السيرفر
+// تشغيل السيرفر
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`🚀 السيرفر يعمل على الرابط: http://localhost:${PORT}`);
+    console.log(`🚀 السيرفر يعمل على الرابط: http://localhost:${PORT}`);
 });

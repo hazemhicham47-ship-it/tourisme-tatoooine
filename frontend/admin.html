@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - إدارة الملفات والإجراءات المزمعة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --success: #16a34a;
+        }
+
+        * { box-sizing: border-box; font-family: 'Tajawal', system-ui, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg); color: var(--text-main); padding: 25px 20px; line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .header { 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+            color: white; 
+            padding: 25px 30px; 
+            border-radius: 16px; 
+            text-align: center; 
+            margin-bottom: 25px;
+        }
+        .header h2 { font-size: 1.8rem; font-weight: 700; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+            margin-bottom: 25px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.88rem; color: var(--primary); }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.92rem;
+            outline: none;
+            background: #ffffff;
+        }
+        .form-control:focus { border-color: var(--accent); }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .doc-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .doc-title { font-weight: 700; font-size: 0.95rem; color: var(--primary); }
+        .doc-meta { font-size: 0.8rem; color: var(--text-muted); }
+
+        .doc-actions { display: flex; gap: 6px; }
+        .btn-action {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-view { background: #e0f2fe; color: #0369a1; }
+        .btn-status { background: #fef3c7; color: #b45309; }
+        .btn-delete { background: var(--danger-bg); color: var(--danger); }
+
+        .dept-section { margin-bottom: 20px; }
+        .dept-section-title { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>⚙️ لوحة التحكم - المستندات والإجراءات المزمعة</h2>
+        </div>
+
+        <div class="main-grid">
+            <!-- Right Column: Add Forms -->
+            <div>
+                <div class="card">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" id="tabDocBtn" onclick="switchTab('doc')">📄 وثيقة / مستند</button>
+                        <button class="tab-btn" id="tabActionBtn" onclick="switchTab('action')">⏰ إجراء مزمع للتذكير</button>
+                    </div>
+
+                    <!-- 1. Form: Add Document -->
+                    <form id="addDocForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>عنوان المستند / المطلب:</label>
+                            <input type="text" name="title" class="form-control" placeholder="مثال: التقرير المالي" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الجهة / القسم:</label>
+                            <select name="department" class="form-control" required>
+                                <option value="الجمعية">👥 الجمعية</option>
+                                <option value="معاملات الشركة">🏢 معاملات الشركة</option>
+                                <option value="ديوان السياحة">🏛️ ديوان السياحة</option>
+                                <option value="أملاك الدولة">📑 أملاك الدولة</option>
+                                <option value="الحماية المدنية">🚒 الحماية المدنية</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>الحالة / الأولوية:</label>
+                            <select name="status" class="form-control" required>
+                                <option value="مقبول">مقبول / منجز</option>
+                                <option value="قيد الدراسة">قيد الدراسة / قيد الانتظار</option>
+                                <option value="مطلب عاجل">مطلب عاجل</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>تاريخ الاستحقاق:</label>
+                            <input type="date" name="due_date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>اختر الملف (PDF / صورة):</label>
+                            <input type="file" name="file" class="form-control" accept="image/*,.pdf">
+                        </div>
+                        <button type="submit" class="btn-submit">➕ إضافة الوثيقة</button>
+                    </form>
+
+                    <!-- 2. Form: Add Action / Reminder -->
+                    <form id="addActionForm" style="display: none;">
+                        <div class="form-group">
+                            <label>عنوان الإجراء المزمع:</label>
+                            <input type="text" name="action_title" class="form-control" placeholder="مثال: تقديم مطلب تجديد الرخصة" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الجهة / القسم:</label>
+                            <select name="department" class="form-control" required>
+                                <option value="الجمعية">👥 الجمعية</option>
+                                <option value="معاملات الشركة">🏢 معاملات الشركة</option>
+                                <option value="ديوان السياحة">🏛️ ديوان السياحة</option>
+                                <option value="أملاك الدولة">📑 أملاك الدولة</option>
+                                <option value="الحماية المدنية">🚒 الحماية المدنية</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>تاريخ ووقت التذكير (قبل الموعد):</label>
+                            <input type="datetime-local" name="remind_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>البريد الإلكتروني لإرسال التنبيه (Email):</label>
+                            <input type="email" name="email" class="form-control" placeholder="user@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>رقم الهاتف للتنبيه عبر (SMS):</label>
+                            <input type="tel" name="phone" class="form-control" placeholder="+216 98 000 000">
+                        </div>
+                        <button type="submit" class="btn-submit" style="background: var(--accent);">🔔 جدولة التذكير</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Left Column: Display Lists -->
+            <div>
+                <!-- Actions List -->
+                <div class="card">
+                    <div class="dept-section-title">⏰ الإجراءات المزمعة للتذكير</div>
+                    <div id="actionsList">⏳ جاري التحميل...</div>
+                </div>
+
+                <!-- Documents List -->
+                <div class="card">
+                    <div class="dept-section-title">📂 وثائق ومستندات الأقسام</div>
+                    <div id="documentsList">⏳ جاري التحميل...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const HOST = window.location.hostname || '127.0.0.1';
+        const API_URL = 'https://tourisme-tatoooine.onrender.com/api';
+        const departments = ["الجمعية", "معاملات الشركة", "ديوان السياحة", "أملاك الدولة", "الحماية المدنية"];
+
+        let cachedActions = [];
+
+        function switchTab(type) {
+            if (type === 'doc') {
+                document.getElementById('addDocForm').style.display = 'block';
+                document.getElementById('addActionForm').style.display = 'none';
+                document.getElementById('tabDocBtn').classList.add('active');
+                document.getElementById('tabActionBtn').classList.remove('active');
+            } else {
+                document.getElementById('addDocForm').style.display = 'none';
+                document.getElementById('addActionForm').style.display = 'block';
+                document.getElementById('tabDocBtn').classList.remove('active');
+                document.getElementById('tabActionBtn').classList.add('active');
+            }
+        }
+
+        async function fetchData() {
+            await Promise.all([fetchDocs(), fetchActions()]);
+        }
+
+        async function fetchDocs() {
+            try {
+                const res = await fetch(`${API_URL}/documents`);
+                if (!res.ok) throw new Error('فشل جلب البيانات');
+                const docs = await res.json();
+                renderDocuments(docs);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('documentsList').innerHTML = '<p style="font-size:0.85rem; color:#dc2626;">فشل تحميل الوثائق.</p>';
+            }
+        }
+
+        async function fetchActions() {
+            try {
+                const res = await fetch(`${API_URL}/actions`);
+                if (!res.ok) throw new Error('فشل جلب البيانات');
+                cachedActions = await res.json();
+                renderActions(cachedActions);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('actionsList').innerHTML = '<p style="font-size:0.85rem; color:#dc2626;">فشل تحميل الإجراءات.</p>';
+            }
+        }
+
+        function renderDocuments(docs) {
+            const container = document.getElementById('documentsList');
+            container.innerHTML = '';
+            departments.forEach(dept => {
+                const deptDocs = docs.filter(d => d.department === dept);
+                let docsHtml = deptDocs.length === 0 ? '<p style="font-size:0.8rem; color:#94a3b8;">لا توجد وثائق.</p>' :
+                    deptDocs.map(doc => {
+                        const docId = doc._id || doc.id;
+                        return `
+                        <div class="doc-item">
+                            <div>
+                                <div class="doc-title">${doc.title}</div>
+                                <div class="doc-meta">الحالة: ${doc.status}</div>
+                            </div>
+                            <div class="doc-actions">
+                                ${doc.file_url ? `<a href="${doc.file_url}" target="_blank" class="btn-action btn-view">👁️</a>` : ''}
+                                <button onclick="updateStatus('${docId}')" class="btn-action btn-status">✏️</button>
+                                <button onclick="deleteDoc('${docId}')" class="btn-action btn-delete">🗑️</button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                container.innerHTML += `<div class="dept-section"><div class="dept-section-title">📌 ${dept} (${deptDocs.length})</div>${docsHtml}</div>`;
+            });
+        }
+
+        function renderActions(actions) {
+            const container = document.getElementById('actionsList');
+            if (!actions || actions.length === 0) {
+                container.innerHTML = '<p style="font-size:0.85rem; color:#94a3b8;">لا توجد إجراءات مزمعة حالياً.</p>';
+                return;
+            }
+            container.innerHTML = actions.map(act => {
+                const actId = act._id || act.id;
+                return `
+                <div class="doc-item" style="border-right: 4px solid var(--accent);">
+                    <div>
+                        <div class="doc-title">⏰ ${act.action_title || act.title || 'إجراء بدون عنوان'}</div>
+                        <div class="doc-meta">الجهة: ${act.department || '-'} | التذكير: ${act.remind_date ? act.remind_date.replace('T', ' ').slice(0, 16) : '-'}</div>
+                    </div>
+                    <div class="doc-actions">
+                        <button onclick="viewAction('${actId}')" class="btn-action btn-view">👁️ عرض</button>
+                        <button onclick="editAction('${actId}')" class="btn-action btn-status">✏️ تعديل</button>
+                        <button onclick="deleteAction('${actId}')" class="btn-action btn-delete">🗑️ مسح</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        document.getElementById('addActionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            if (data.remind_date) {
+                data.remind_date = data.remind_date.replace('T', ' ') + ':00';
+            }
+            data.title = data.action_title;
+
+            try {
+                const res = await fetch(`${API_URL}/actions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    Swal.fire('تمت الجدولة!', 'سيتم إرسال الإيميل والرسالة عند حلول الوقت المحدد', 'success');
+                    e.target.reset();
+                    fetchActions();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) { Swal.fire('خطأ', 'تعذر إضافة الإجراء', 'error'); }
+        });
+
+        document.getElementById('addDocForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            try {
+                const res = await fetch(`${API_URL}/documents`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data) 
+                });
+                if (res.ok) {
+                    Swal.fire('تمت الإضافة!', 'تم حفظ الوثيقة بنجاح', 'success');
+                    e.target.reset();
+                    fetchDocs();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) { Swal.fire('خطأ', 'فشل الحفظ', 'error'); }
+        });
+
+        async function updateStatus(id) {
+            const { value: newStatus } = await Swal.fire({
+                title: 'تغيير حالة الوثيقة',
+                input: 'select',
+                inputOptions: { 'مقبول': 'مقبول / منجز', 'قيد الدراسة': 'قيد الدراسة', 'مطلب عاجل': 'مطلب عاجل' },
+                showCancelButton: true,
+                confirmButtonText: 'تحديث',
+                cancelButtonText: 'إلغاء'
+            });
+            if (newStatus) {
+                try {
+                    await fetch(`${API_URL}/documents/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    fetchDocs();
+                } catch (err) {
+                    Swal.fire('خطأ', 'تعذر تغيير الحالة', 'error');
+                }
+            }
+        }
+
+        async function viewAction(id) {
+            let act = cachedActions.find(a => (a._id || a.id) == id);
+            if (act) {
+                Swal.fire({
+                    title: `⏰ ${act.action_title || act.title || 'تفاصيل الإجراء'}`,
+                    html: `
+                        <div style="text-align: right; line-height: 1.8;">
+                            <p><strong>الجهة:</strong> ${act.department || '-'}</p>
+                            <p><strong>تاريخ التذكير:</strong> ${act.remind_date ? act.remind_date.replace('T', ' ').slice(0, 16) : '-'}</p>
+                            <p><strong>البريد الإلكتروني:</strong> ${act.email || '-'}</p>
+                            <p><strong>الهاتف:</strong> ${act.phone || '-'}</p>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: 'إغلاق'
+                });
+            } else {
+                Swal.fire('خطأ', 'تعذر جلب تفاصيل الإجراء', 'error');
+            }
+        }
+
+        async function editAction(id) {
+            let act = cachedActions.find(a => (a._id || a.id) == id);
+
+            if (!act) {
+                Swal.fire('خطأ', 'تعذر العثور على بيانات الإجراء لتعديله', 'error');
+                return;
+            }
+
+            let formattedDate = '';
+            if (act.remind_date) {
+                formattedDate = act.remind_date.replace(' ', 'T').slice(0, 16);
+            }
+
+            const { value: formValues } = await Swal.fire({
+                title: 'تعديل الإجراء المزمع',
+                html: `
+                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; font-size: 0.85rem;">عنوان الإجراء:</div>
+                    <input id="swal-title" class="swal2-input" style="margin-top:0;" placeholder="عنوان الإجراء" value="${act.action_title || act.title || ''}">
+                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; margin-top: 8px; font-size: 0.85rem;">تاريخ ووقت التذكير:</div>
+                    <input id="swal-date" type="datetime-local" class="swal2-input" style="margin-top:0;" value="${formattedDate}">
+                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; margin-top: 8px; font-size: 0.85rem;">البريد الإلكتروني:</div>
+                    <input id="swal-email" type="email" class="swal2-input" style="margin-top:0;" placeholder="البريد الإلكتروني" value="${act.email || ''}">
+                    <div style="text-align: right; font-weight: bold; margin-bottom: 3px; margin-top: 8px; font-size: 0.85rem;">رقم الهاتف:</div>
+                    <input id="swal-phone" type="tel" class="swal2-input" style="margin-top:0;" placeholder="رقم الهاتف" value="${act.phone || ''}">
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'حفظ التعديلات',
+                cancelButtonText: 'إلغاء',
+                preConfirm: () => {
+                    const titleVal = document.getElementById('swal-title').value;
+                    const rawDate = document.getElementById('swal-date').value;
+                    
+                    let formattedDbDate = rawDate;
+                    if (rawDate) {
+                        formattedDbDate = rawDate.replace('T', ' ') + ':00';
+                    }
+
+                    return {
+                        id: id,
+                        title: titleVal,
+                        action_title: titleVal,
+                        remind_date: formattedDbDate,
+                        email: document.getElementById('swal-email').value,
+                        phone: document.getElementById('swal-phone').value,
+                        department: act.department || 'الجمعية'
+                    };
+                }
+            });
+
+            if (formValues) {
+                const attempts = [
+                    { url: `${API_URL}/actions/${id}`, method: 'PUT' },
+                    { url: `${API_URL}/actions/${id}`, method: 'PATCH' },
+                    { url: `${API_URL}/actions/${id}`, method: 'POST' },
+                    { url: `${API_URL}/actions/update/${id}`, method: 'POST' },
+                    { url: `${API_URL}/actions/update`, method: 'POST' }
+                ];
+
+                let success = false;
+
+                for (let reqConfig of attempts) {
+                    try {
+                        let res = await fetch(reqConfig.url, {
+                            method: reqConfig.method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(formValues)
+                        });
+
+                        if (res.ok) {
+                            success = true;
+                            break;
+                        }
+                    } catch (e) {
+                        console.log(`فشلت المحاولة عبر ${reqConfig.method} ${reqConfig.url}`);
+                    }
+                }
+
+                if (success) {
+                    Swal.fire('تم التعديل!', 'تمت تحديث بيانات الإجراء بنجاح', 'success');
+                    fetchActions();
+                } else {
+                    Swal.fire('خطأ 404', 'مسار التعديل غير معرّف في السيرفر. يرجى التأكد من إضافة كود app.put("/api/actions/:id") في السيرفر.', 'error');
+                }
+            }
+        }
+
+        async function deleteDoc(id) {
+            if (confirm('مسح الوثيقة؟')) {
+                try {
+                    await fetch(`${API_URL}/documents/${id}`, { method: 'DELETE' });
+                    fetchDocs();
+                } catch (err) {
+                    Swal.fire('خطأ', 'تعذر حذف الوثيقة', 'error');
+                }
+            }
+        }
+
+        async function deleteAction(id) {
+            if (confirm('حذف هذا التذكير؟')) {
+                try {
+                    await fetch(`${API_URL}/actions/${id}`, { method: 'DELETE' });
+                    fetchActions();
+                } catch (err) {
+                    Swal.fire('خطأ', 'تعذر حذف التذكير', 'error');
+                }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', fetchData);
+    </script>
+</body>
+</html>

@@ -22,5 +22,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hazemhicham47-ship-it/tourisme-tatoooine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hazemhicham47-ship-it/tourisme-tatoooine/issues"
+  },
+  "homepage": "https://github.com/hazemhicham47-ship-it/tourisme-tatoooine#readme"
 }
