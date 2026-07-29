@@ -61,16 +61,15 @@ cron.schedule('* * * * *', async () => {
         for (let action of unSentActions) {
             if (!action.remind_date) continue;
 
-            // تحويل وقت التذكير المخزن إلى كائن تاريخ رقمي دقيق
             const remindDateObj = new Date(action.remind_date.replace(' ', 'T'));
 
-            // التحقق حصراً إذا كان وقت التذكير قد حان أو فات فعلاً
             if (remindDateObj.getTime() <= currentDate.getTime()) {
                 pendingCount++;
                 console.log(`🚀 بدء معالجة الإجراء المستحق: ${action.title || action.action_title} (المحدد: ${action.remind_date})`);
 
                 if (action.email) {
                     const emailsList = action.email.split(',').map(e => e.trim());
+                    let allSentSuccessfully = true;
 
                     for (let recipientEmail of emailsList) {
                         try {
@@ -94,16 +93,23 @@ cron.schedule('* * * * *', async () => {
                                 console.log(`📧 تم إرسال الإيميل بنجاح في موعده الدقيق إلى: ${recipientEmail} (ID: ${resData.id})`);
                             } else {
                                 console.error(`❌ خطأ من Resend عند الإرسال إلى ${recipientEmail}:`, resData);
+                                allSentSuccessfully = false; // فشل الإرسال لأحد العناوين
                             }
                         } catch (fetchErr) {
                             console.error(`❌ خطأ في الاتصال بالـ API:`, fetchErr);
+                            allSentSuccessfully = false;
                         }
                     }
-                }
 
-                action.sent = true;
-                await action.save();
-                console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
+                    // لا يتم تحديث حالة الإجراء إلى (sent: true) إلا إذا تم الإرسال بنجاح تام
+                    if (allSentSuccessfully) {
+                        action.sent = true;
+                        await action.save();
+                        console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
+                    } else {
+                        console.log(`⚠️ لم يتم تغيير حالة الإجراء إلى مكتمل نظراً لفشل إرسال بعض الإيميلات وستم إعادة المحاولة لاحقاً.`);
+                    }
+                }
             }
         }
 
