@@ -22,13 +22,17 @@ mongoose.connect(MONGODB_URI)
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
 
-// إعداد مرسل البريد الإلكتروني مع فرض استخدام IPv4 لتجنب حظر الشبكة على Render
+// إعداد مرسل البريد الإلكتروني عبر SMTP الصريح على المنفذ 587 لتجاوز قيود IPv6 على Render
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    family: 4,
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS 
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
@@ -91,7 +95,7 @@ cron.schedule('* * * * *', async () => {
                             };
 
                             await transporter.sendMail(mailOptions);
-                            console.log(`📧 تم إرسال الإيميل بنجاح عبر Gmail إلى: ${recipientEmail}`);
+                            console.log(`📧 تم إرسال الإيميل بنجاح عبر SMTP إلى: ${recipientEmail}`);
                         } catch (mailErr) {
                             console.error(`❌ خطأ دقيق في إرسال البريد إلى ${recipientEmail}:`, mailErr.message);
                             allSentSuccessfully = false;
