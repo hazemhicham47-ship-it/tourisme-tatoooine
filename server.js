@@ -55,7 +55,7 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// --- نظام التنبيهات المجدولة (يدعم الإرسال المتعدد لأكثر من موظف) ---
+// --- نظام التنبيهات المجدولة (مع طباعة الفحص الدوري في الـ Logs) ---
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
@@ -66,15 +66,21 @@ cron.schedule('* * * * *', async () => {
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const currentFormatted = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-        // البحث عن الإجراءات التي حان وقتها ولم تُرسل
+        // طباعة الوقت الحالي للسيرفر للتأكد من أن الـ Cron يعمل كل دقيقة
+        console.log(`⏰ [فحص دوري] وقت السيرفر: ${currentFormatted}`);
+
+        // البحث عن الإجراءات المستحقة
         const pendingActions = await Action.find({ 
             remind_date: { $lte: currentFormatted }, 
             sent: { $ne: true }
         });
 
+        console.log(`🔍 عدد الإجراءات المستحقة المكتشفة: ${pendingActions.length}`);
+
         for (let action of pendingActions) {
+            console.log(`🚀 بدء معالجة الإجراء: ${action.title || action.action_title} للإيميلات: ${action.email}`);
+
             if (action.email) {
-                // تقسيم الإيميلات المفصولة بفاصلة لإرسالها للجميع
                 const emailsList = action.email.split(',').map(e => e.trim());
 
                 for (let recipientEmail of emailsList) {
@@ -94,6 +100,7 @@ cron.schedule('* * * * *', async () => {
                 // تحديث حالة الإجراء ليصبح مُرسلاً ولا يتكرر
                 action.sent = true;
                 await action.save();
+                console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
             }
         }
     } catch (err) {
