@@ -1,7 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 require('dotenv').config();
 
@@ -21,15 +20,6 @@ mongoose.connect(MONGODB_URI)
     .catch(err => console.error('❌ خطأ في الاتصال بـ MongoDB:', err));
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
-
-// إعداد خدمة الإرسال عبر البريد الإلكتروني (Nodemailer)
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
 
 // مخططات البيانات
 const DocumentSchema = new mongoose.Schema({
@@ -55,7 +45,7 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// --- نظام التنبيهات المجدولة (مع طباعة الفحص الدوري في الـ Logs) ---
+// --- نظام التنبيهات المجدولة باستخدام Resend API ---
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
@@ -66,10 +56,8 @@ cron.schedule('* * * * *', async () => {
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const currentFormatted = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-        // طباعة الوقت الحالي للسيرفر للتأكد من أن الـ Cron يعمل كل دقيقة
         console.log(`⏰ [فحص دوري] وقت السيرفر: ${currentFormatted}`);
 
-        // البحث عن الإجراءات المستحقة
         const pendingActions = await Action.find({ 
             remind_date: { $lte: currentFormatted }, 
             sent: { $ne: true }
@@ -78,33 +66,48 @@ cron.schedule('* * * * *', async () => {
         console.log(`🔍 عدد الإجراءات المستحقة المكتشفة: ${pendingActions.length}`);
 
         for (let action of pendingActions) {
-            console.log(`🚀 بدء معالجة الإجراء: ${action.title || action.action_title} للإيميلات: ${action.email}`);
+            console.log(`🚀 بدء معالجة الإجراء: ${action.title || action.action_title}`);
 
             if (action.email) {
                 const emailsList = action.email.split(',').map(e => e.trim());
 
                 for (let recipientEmail of emailsList) {
                     try {
-                        await transporter.sendMail({
-                            from: process.env.EMAIL_USER,
-                            to: recipientEmail,
-                            subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
-                            text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nمشروع تطاوين السياحي.`
+                        // إرسال الإيميل عبر Resend HTTP API
+                        const response = await fetch('https://api.resend.com/emails', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                from: 'Acme <onboarding@resend.dev>', // ملاحظة: يمكنك تغييرها بريدك الموثق لاحقاً
+                                to: [recipientEmail],
+                                subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
+                                text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
+                            })
                         });
-                        console.log(`📧 تم إرسال الإيميل بنجاح إلى: ${recipientEmail}`);
-                    } catch (mailErr) {
-                        console.error(`❌ خطأ في إرسال الإيميل إلى ${recipientEmail}:`, mailErr);
+
+                        const resData = await response.json();
+
+                        if (response.ok) {
+                            console.log(`📧 تم إرسال الإيميل بنجاح إلى: ${recipientEmail} (ID: ${resData.id})`);
+                        } else {
+                            console.error(`❌ خطأ من Resend عند الإرسال إلى ${recipientEmail}:`, resData);
+                        }
+                    } catch (fetchErr) {
+                        console.error(`❌ فشل الاتصال بالـ API:`, fetchErr);
                     }
                 }
 
-                // تحديث حالة الإجراء ليصبح مُرسلاً ولا يتكرر
+                // تحديث حالة الإجراء ليصبح مُرسلاً
                 action.sent = true;
                 await action.save();
                 console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
             }
         }
     } catch (err) {
-        console.error('❌ خطأ في نظام التنبيهات المجدولة:', err);
+        console.error('❌ خطأ عام في نظام التنبيهات المجدولة:', err);
     }
 });
 
