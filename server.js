@@ -26,8 +26,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026";
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER, // بريدك على Gmail
-        pass: process.env.EMAIL_PASS  // كلمة مرور التطبيق المكونة من 16 حرفاً
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS 
     }
 });
 
@@ -47,7 +47,7 @@ const ActionSchema = new mongoose.Schema({
     title: { type: String, required: true },
     action_title: { type: String },
     department: { type: String, required: true },
-    remind_date: { type: String }, // صيغة: YYYY-MM-DDTHH:mm
+    remind_date: { type: String },
     email: { type: String },
     phone: { type: String },
     sent: { type: Boolean, default: false },
@@ -93,16 +93,14 @@ cron.schedule('* * * * *', async () => {
                             await transporter.sendMail(mailOptions);
                             console.log(`📧 تم إرسال الإيميل بنجاح عبر Gmail إلى: ${recipientEmail}`);
                         } catch (mailErr) {
-                            console.error(`❌ خطأ في إرسال البريد إلى ${recipientEmail}:`, mailErr);
+                            console.error(`❌ خطأ دقيق في إرسال البريد إلى ${recipientEmail}:`, mailErr.message);
                             allSentSuccessfully = false;
                         }
                     }
 
-                    // تحديث الحالة إلى مكتمل فقط إذا تم الإرسال بنجاح
                     if (allSentSuccessfully) {
-                        action.sent = true;
-                        await action.save();
-                        console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
+                        await Action.findByIdAndUpdate(action._id, { sent: true });
+                        console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true) وتم قفله نهائياً.`);
                     } else {
                         console.log(`⚠️ لم يتم تغيير حالة الإجراء نظراً لفشل إرسال بعض الإيميلات.`);
                     }
