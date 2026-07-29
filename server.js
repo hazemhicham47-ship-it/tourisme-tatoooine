@@ -22,12 +22,12 @@ mongoose.connect(MONGODB_URI)
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
 
-// إعداد خدمة الإرسال عبر Nodemailer (استبدل البيانات ببيانات بريدك الحقيقي أو استخدم متغيرات البيئة)
+// إعداد خدمة الإرسال عبر البريد الإلكتروني (Nodemailer)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER, // بريدك الإلكتروني
-        pass: process.env.EMAIL_PASS  // كلمة مرور التطبيق (App Password) من إعدادات جوجل
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
@@ -47,19 +47,18 @@ const ActionSchema = new mongoose.Schema({
     title: { type: String, required: true },
     action_title: { type: String },
     department: { type: String, required: true },
-    remind_date: { type: String }, // صيغة التاريخ والوقت المتوقعة مثل: YYYY-MM-DDTHH:mm
+    remind_date: { type: String }, // صيغة: YYYY-MM-DDTHH:mm
     email: { type: String },
     phone: { type: String },
-    sent: { type: Boolean, default: false }, // لتجنب إعادة إرسال نفس التنبيه
+    sent: { type: Boolean, default: false },
     date: { type: Date, default: Date.now }
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// --- جدول زمني يعمل كل دقيقة للتحقق من التذكيرات المستحقة ---
+// --- نظام التنبيهات المجدولة (يدعم الإرسال المتعدد لأكثر من موظف) ---
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
-        // تنسيق الوقت الحالي لتطابق صيغة الإدخال (مثال: 2026-07-29T18:22)
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
@@ -67,35 +66,42 @@ cron.schedule('* * * * *', async () => {
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const currentFormatted = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-        // البحث عن الإجراءات التي حان وقتها ولم يتم إرسالها بعد
+        // البحث عن الإجراءات التي حان وقتها ولم تُرسل
         const pendingActions = await Action.find({ 
             remind_date: { $lte: currentFormatted }, 
-            sent: { $ne: true },
-            email: { $exists: true, $ne: "" }
+            sent: { $ne: true }
         });
 
         for (let action of pendingActions) {
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: action.email,
-                subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
-                text: `مرحباً،\n\nهذا تذكير بموعد الإجراء الخاص بقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nتحياتنا، مشروع تطاوين السياحي.`
-            };
+            if (action.email) {
+                // تقسيم الإيميلات المفصولة بفاصلة لإرسالها للجميع
+                const emailsList = action.email.split(',').map(e => e.trim());
 
-            await transporter.sendMail(mailOptions);
-            console.log(`📧 تم إرسال تنبيه البريد بنجاح إلى: ${action.email}`);
+                for (let recipientEmail of emailsList) {
+                    try {
+                        await transporter.sendMail({
+                            from: process.env.EMAIL_USER,
+                            to: recipientEmail,
+                            subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
+                            text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nمشروع تطاوين السياحي.`
+                        });
+                        console.log(`📧 تم إرسال الإيميل بنجاح إلى: ${recipientEmail}`);
+                    } catch (mailErr) {
+                        console.error(`❌ خطأ في إرسال الإيميل إلى ${recipientEmail}:`, mailErr);
+                    }
+                }
 
-            // تحديث حالة الإجراء ليصبح مُرسلاً ولا يتكرر
-            action.sent = true;
-            await action.save();
+                // تحديث حالة الإجراء ليصبح مُرسلاً ولا يتكرر
+                action.sent = true;
+                await action.save();
+            }
         }
     } catch (err) {
         console.error('❌ خطأ في نظام التنبيهات المجدولة:', err);
     }
 });
 
-// --- المسارات (Routes) ---
-
+// --- المسارات الأساسية ---
 app.post('/api/login', (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
