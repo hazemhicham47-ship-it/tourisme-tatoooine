@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const app = express();
 
-// إعداد CORS الشامل لتفادي أي حظر من المتصفح (CORS Error)
+// إعداد CORS الشامل
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -20,34 +20,35 @@ mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ متصل بقاعدة بيانات MongoDB بنجاح'))
     .catch(err => console.error('❌ خطأ في الاتصال بـ MongoDB:', err));
 
-// كلمة المرور ودالة الحماية
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "tatooine2026"; 
 
-// Middleware للتأكد من وجود التوكن عند التعديل أو الحذف أو الإضافة
-const requireAuth = (req, res, next) => {
-    const token = req.headers['authorization'];
-    if (token === "admin-auth-secret-token") {
-        next();
-    } else {
-        res.status(401).json({ error: "غير مصرح لك للقيام بهذه العملية! يرجى تسجيل الدخول أولاً." });
-    }
-};
-
-// مخطط الشريحة / المستند (Document Schema)
+// 1. مخطط المستندات (Documents Schema)
 const DocumentSchema = new mongoose.Schema({
     title: { type: String, required: true },
-    category: { type: String, required: true },
+    department: { type: String, required: true }, // تم تعديلها لتوافق الواجهة
+    category: { type: String },
     status: { type: String, default: 'مقبول' },
-    urgent: { type: Boolean, default: false },
-    fileUrl: { type: String, default: '' },
+    file_url: { type: String, default: '' },
+    due_date: { type: String },
     date: { type: Date, default: Date.now }
 });
-
 const Document = mongoose.model('Document', DocumentSchema);
+
+// 2. مخطط الإجراءات المزمعة والتذكيرات (Actions Schema)
+const ActionSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    action_title: { type: String },
+    department: { type: String, required: true },
+    remind_date: { type: String },
+    email: { type: String },
+    phone: { type: String },
+    date: { type: Date, default: Date.now }
+});
+const Action = mongoose.model('Action', ActionSchema);
 
 // --- المسارات (Routes) ---
 
-// 1. مسار تسجيل الدخول للأدمن
+// مسار تسجيل الدخول
 app.post('/api/login', (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
@@ -56,44 +57,79 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ success: false, message: "كلمة المرور غير صحيحة!" });
 });
 
-// 2. جلب جميع المستندات (متاح للجميع)
+// --- مسارات المستندات ---
 app.get('/api/documents', async (req, res) => {
     try {
-        const documents = await Document.find().sort({ date: -1 });
-        res.json(documents);
+        const docs = await Document.find().sort({ date: -1 });
+        res.json(docs);
     } catch (err) {
-        res.status(500).json({ error: "خطأ في جلب البيانات من السيرفر" });
+        res.status(500).json({ error: "خطأ في جلب المستندات" });
     }
 });
 
-// 3. إضافة مستند جديد (محمي)
-app.post('/api/documents', requireAuth, async (req, res) => {
+app.post('/api/documents', async (req, res) => {
     try {
         const newDoc = new Document(req.body);
-        const savedDoc = await newDoc.save();
-        res.status(201).json(savedDoc);
+        const saved = await newDoc.save();
+        res.status(201).json(saved);
     } catch (err) {
         res.status(400).json({ error: "فشل في إضافة المستند" });
     }
 });
 
-// 4. تعديل مستند (محمي)
-app.put('/api/documents/:id', requireAuth, async (req, res) => {
+app.put('/api/documents/:id', async (req, res) => {
     try {
-        const updatedDoc = await Document.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json(updatedDoc);
+        const updated = await Document.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
     } catch (err) {
         res.status(400).json({ error: "فشل في تعديل المستند" });
     }
 });
 
-// 5. حذف مستند (محمي)
-app.delete('/api/documents/:id', requireAuth, async (req, res) => {
+app.delete('/api/documents/:id', async (req, res) => {
     try {
         await Document.findByIdAndDelete(req.params.id);
-        res.json({ message: "تم حذف المستند بنجاح" });
+        res.json({ message: "تم الحذف بنجاح" });
     } catch (err) {
-        res.status(400).json({ error: "فشل في حذف المستند" });
+        res.status(400).json({ error: "فشل في الحذف" });
+    }
+});
+
+// --- مسارات الإجراءات المزمعة والتذكيرات ---
+app.get('/api/actions', async (req, res) => {
+    try {
+        const actions = await Action.find().sort({ date: -1 });
+        res.json(actions);
+    } catch (err) {
+        res.status(500).json({ error: "خطأ في جلب الإجراءات" });
+    }
+});
+
+app.post('/api/actions', async (req, res) => {
+    try {
+        const newAction = new Action(req.body);
+        const saved = await newAction.save();
+        res.status(201).json(saved);
+    } catch (err) {
+        res.status(400).json({ error: "فشل في إضافة الإجراء" });
+    }
+});
+
+app.put('/api/actions/:id', async (projectReq, res) => {
+    try {
+        const updated = await Action.findByIdAndUpdate(projectReq.params.id, projectReq.body, { new: true });
+        res.json(updated);
+    } catch (err) {
+        res.status(400).json({ error: "فشل في تعديل الإجراء" });
+    }
+});
+
+app.delete('/api/actions/:id', async (req, res) => {
+    try {
+        await Action.findByIdAndDelete(req.params.id);
+        res.json({ message: "تم حذف الإجراء بنجاح" });
+    } catch (err) {
+        res.status(400).json({ error: "فشل في حذف الإجراء" });
     }
 });
 
