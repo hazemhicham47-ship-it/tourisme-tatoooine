@@ -45,7 +45,7 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// --- نظام التنبيهات المجدولة باستخدام Resend API ---
+// --- نظام التنبيهات المجدولة (مقارنة دقيقة بالدقيقة) ---
 cron.schedule('* * * * *', async () => {
     try {
         const now = new Date();
@@ -54,10 +54,12 @@ cron.schedule('* * * * *', async () => {
         const day = String(now.getDate()).padStart(2, '0');
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
+        
         const currentFormatted = `${year}-${month}-${day}T${hours}:${minutes}`;
 
         console.log(`⏰ [فحص دوري] وقت السيرفر: ${currentFormatted}`);
 
+        // البحث عن الإجراءات التي حان وقتها أو تجاوزته بدقة
         const pendingActions = await Action.find({ 
             remind_date: { $lte: currentFormatted }, 
             sent: { $ne: true }
@@ -73,7 +75,6 @@ cron.schedule('* * * * *', async () => {
 
                 for (let recipientEmail of emailsList) {
                     try {
-                        // إرسال الإيميل عبر Resend HTTP API
                         const response = await fetch('https://api.resend.com/emails', {
                             method: 'POST',
                             headers: {
@@ -81,7 +82,7 @@ cron.schedule('* * * * *', async () => {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                from: 'Acme <onboarding@resend.dev>', // ملاحظة: يمكنك تغييرها بريدك الموثق لاحقاً
+                                from: 'Acme <onboarding@resend.dev>',
                                 to: [recipientEmail],
                                 subject: `⏰ تذكير بإجراء: ${action.title || action.action_title}`,
                                 text: `مرحباً،\n\nهذا تذكير بموعد الإجراء لقسم: ${action.department}\nالعنوان: ${action.title || action.action_title}\nالموعد المحدد: ${action.remind_date}\n\nنظام الإدارة - مشروع تطاوين السياحي.`
@@ -91,23 +92,22 @@ cron.schedule('* * * * *', async () => {
                         const resData = await response.json();
 
                         if (response.ok) {
-                            console.log(`📧 تم إرسال الإيميل بنجاح إلى: ${recipientEmail} (ID: ${resData.id})`);
+                            console.log(`📧 تم إرسال الإيميل بنجاح في الوقت المحدد إلى: ${recipientEmail} (ID: ${resData.id})`);
                         } else {
                             console.error(`❌ خطأ من Resend عند الإرسال إلى ${recipientEmail}:`, resData);
                         }
                     } catch (fetchErr) {
-                        console.error(`❌ فشل الاتصال بالـ API:`, fetchErr);
+                        console.error(`❌ خطأ في الإرسال:`, fetchErr);
                     }
                 }
 
-                // تحديث حالة الإجراء ليصبح مُرسلاً
                 action.sent = true;
                 await action.save();
                 console.log(`✅ تم تحديث حالة الإجراء بنجاح إلى (sent: true)`);
             }
         }
     } catch (err) {
-        console.error('❌ خطأ عام في نظام التنبيهات المجدولة:', err);
+        console.error('❌ خطأ في النظام:', err);
     }
 });
 
