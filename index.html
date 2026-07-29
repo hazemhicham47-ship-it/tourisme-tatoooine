@@ -3,529 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة المستثمر - منصة متابعة المشاريع</title>
-    <!-- خط Tajawal لاضفاء مظهر عصري ورسمي -->
+    <title>بوابة المستثمر - متابعة المستندات والإجراءات المزمعة</title>
+    <!-- استيراد خط Tajawal -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome للأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #1e293b;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --success-bg: #dcfce7;
-            --success-text: #15803d;
-            --warning-bg: #fef3c7;
-            --warning-text: #b45309;
-            --danger-bg: #fee2e2;
-            --danger-text: #b91c1c;
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
         }
-
-        * { box-sizing: border-box; font-family: 'Tajawal', system-ui, sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--bg); color: var(--text-main); padding: 30px 20px; line-height: 1.5; }
-        .container { max-width: 1000px; margin: 0 auto; }
-
-        /* Header */
-        .header { 
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
-            color: white; 
-            padding: 30px; 
-            border-radius: 16px; 
-            text-align: center; 
-            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
-            margin-bottom: 25px;
-        }
-        .header h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
-        .header p { color: #94a3b8; font-size: 0.95rem; }
-
-        /* KPI Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .stat-card {
-            background: var(--card-bg);
-            padding: 18px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .stat-card .val { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
-        .stat-card .lbl { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-
-        /* Controls Section */
-        .controls-card {
-            background: var(--card-bg);
-            padding: 15px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .search-input, .filter-select {
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            outline: none;
-            transition: all 0.2s;
-        }
-        .search-input { flex: 1; min-width: 200px; }
-        .search-input:focus, .filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-
-        /* Horizontal Floating Buttons Bar */
-        .nav-buttons-container {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            margin-bottom: 25px;
-            scrollbar-width: thin;
-        }
-        .nav-buttons-container::-webkit-scrollbar { height: 6px; }
-        .nav-buttons-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-        .btn-dept {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 0.92rem;
-            font-weight: 700;
-            color: var(--primary);
-            cursor: pointer;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-            user-select: none;
-        }
-
-        .btn-dept:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
-        }
-
-        .btn-dept.active {
-            background: var(--primary);
+        .header-section {
+            background-color: #0f172a;
             color: white;
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+            padding: 2rem 1rem;
+            text-align: center;
+            border-bottom: 4px solid #3b82f6;
         }
-
-        .btn-dept .badge-count {
-            background: #e2e8f0;
-            color: var(--primary);
-            padding: 2px 8px;
+        .card-stats {
+            border: none;
             border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 700;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
         }
-
-        .btn-dept.active .badge-count {
-            background: rgba(255, 255, 255, 0.25);
-            color: white;
+        .card-stats:hover {
+            transform: translateY(-3px);
         }
-
-        /* Department Content Cards */
-        .dept-card { 
-            background: var(--card-bg); 
-            border-radius: 14px; 
-            padding: 24px; 
-            margin-bottom: 20px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03); 
-            display: none; 
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .dept-card.visible {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .dept-header { 
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 2px solid #f1f5f9; 
-            padding-bottom: 12px; 
-            margin-bottom: 16px; 
-        }
-        .dept-title { font-size: 1.15rem; font-weight: 700; color: var(--primary); }
-
-        /* Document Item Rows */
-        .item-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 12px 16px; 
-            border-radius: 8px;
-            background: #fafafa;
-            margin-bottom: 8px;
-            border: 1px solid var(--border);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .item-row:last-child { margin-bottom: 0; }
-        .item-row:hover { transform: translateX(-3px); background: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
-
-        .doc-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 4px; }
-        .doc-meta { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--text-muted); }
-
-        /* Badges */
-        .badge { padding: 3px 9px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
-        .badge-done { background: var(--success-bg); color: var(--success-text); }
-        .badge-pending { background: var(--warning-bg); color: var(--warning-text); }
-        .badge-urgent { background: var(--danger-bg); color: var(--danger-text); }
-
-        /* Buttons */
-        .btn-file { 
-            background: var(--accent); 
-            color: white; 
-            padding: 7px 14px; 
-            border-radius: 8px; 
-            text-decoration: none; 
-            font-size: 0.82rem; 
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        .btn-file:hover { background: var(--accent-hover); }
-
-        .empty-state { text-align: center; color: var(--text-muted); padding: 15px 0; font-size: 0.9rem; }
-        .error-box { background: var(--danger-bg); color: var(--danger-text); padding: 20px; border-radius: 12px; text-align: center; font-weight: 500; }
-
-        /* 🔔 تنسيقات قسم الإجراءات المزمعة والتذكيرات */
-        .actions-card {
-            background: #fff8f1;
-            border: 1px solid #ffedd5;
-            border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .actions-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #c2410c;
-            border-bottom: 2px solid #ffedd5;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .actions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px;
-        }
-        .action-item {
-            background: #ffffff;
-            border: 1px solid #fed7aa;
-            border-right: 5px solid #f97316;
-            border-radius: 10px;
-            padding: 12px 15px;
-        }
-        .action-item-title { font-weight: 700; font-size: 0.95rem; color: #9a3412; margin-bottom: 4px; }
-        .action-item-dept { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
-        .action-item-contact { font-size: 0.78rem; color: var(--accent); margin-bottom: 6px; font-weight: 500; word-break: break-all; }
-        .action-item-date { 
-            font-size: 0.78rem; 
-            font-weight: 700; 
-            color: #c2410c; 
-            background: #ffedd5; 
-            padding: 3px 8px; 
-            border-radius: 6px; 
-            display: inline-block;
+        .alert-banner {
+            display: none;
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 2px solid #f87171;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h2>💼 بوابة المستثمر - متابعة المشاريع والوثائق</h2>
-            <p>انقر على أي قسم لعرض المستندات والوثائق الخاصة به</p>
-        </div>
 
-        <!-- 🔔 قسم عرض الإجراءات المزمعة والتذكيرات القادمة -->
-        <div class="actions-card">
-            <div class="actions-title">🔔 الإجراءات المزمعة والتذكيرات القادمة</div>
-            <div id="actionsContainer" class="actions-grid">
-                <p style="color: var(--text-muted); font-size: 0.88rem;">⏳ جاري جلب الإجراءات المزمعة...</p>
-            </div>
-        </div>
-
-        <!-- KPI Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div>
-                    <div class="lbl">إجمالي الوثائق</div>
-                    <div class="val" id="statTotal">0</div>
-                </div>
-                <div style="font-size: 2rem;">📁</div>
-            </div>
-            <div class="stat-card">
-                <div>
-                    <div class="lbl">المستندات المقبولة</div>
-                    <div class="val" id="statDone" style="color: var(--success-text);">0</div>
-                </div>
-                <div style="font-size: 2rem;">✅</div>
-            </div>
-            <div class="stat-card">
-                <div>
-                    <div class="lbl">طلبات عاجلة</div>
-                    <div class="val" id="statUrgent" style="color: var(--danger-text);">0</div>
-                </div>
-                <div style="font-size: 2rem;">🚨</div>
-            </div>
-        </div>
-
-        <!-- Search / Filter -->
-        <div class="controls-card">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث عن اسم وثيقة..." oninput="filterData()">
-            <select id="statusFilter" class="filter-select" onchange="filterData()">
-                <option value="all">جميع الحالات</option>
-                <option value="مقبول">مقبول / منجز</option>
-                <option value="مطلب عاجل">مطلب عاجل</option>
-                <option value="قيد الانتظار">قيد الانتظار</option>
-            </select>
-        </div>
-
-        <!-- Horizontal Buttons Bar -->
-        <div class="nav-buttons-container" id="deptButtonsContainer">
-            <!-- سيتم توليد الأزرار الأفقية هنا ديناميكياً -->
-        </div>
-
-        <!-- Dynamic Content Container -->
-        <div id="investorContent">
-            <p style="text-align: center; color: var(--text-muted); padding: 40px 0;">⏳ جاري جلب الوثائق والمستندات...</p>
-        </div>
+    <!-- تنبيه عدم الاتصال بالسيرفر -->
+    <div id="connectionAlert" class="alert-banner">
+        ⚠️ تعذر الاتصال بالسيرفر. يجتمع النظام الآن أو أن هناك مشكلة في الاتصال بالخادم.
     </div>
 
+    <!-- الهيدر -->
+    <div class="header-section">
+        <h2><i class="fas fa-landmark"></i> بوابة المستثمر - متابعة المستندات والإجراءات</h2>
+        <p class="text-muted mt-2">انقر على أي قسم لعرض قسم المستندات والوثائق الخاصة به</p>
+    </div>
+
+    <div class="container my-4">
+
+        <!-- قسم الإجراءات المزمعة والتذكيرات القادمة -->
+        <div class="card shadow-sm mb-4 border-warning">
+            <div class="card-header bg-warning text-dark fw-bold">
+                <i class="fas fa-bell"></i> الإجراءات المزمعة والتذكيرات القادمة
+            </div>
+            <div class="card-body">
+                <div id="actionsContainer">
+                    <p class="text-muted text-center mb-0">جاري تحميل الإجراءات المزمعة...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- إحصائيات سريعة -->
+        <div class="row text-center mb-4 g-3">
+            <div class="col-md-4">
+                <div class="card card-stats p-3 bg-white">
+                    <h6 class="text-muted">إجمالي الوثائق</h6>
+                    <h3 id="totalDocsCount" class="fw-bold text-primary">0</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-stats p-3 bg-white">
+                    <h6 class="text-muted">المستندات المقبولة</h6>
+                    <h3 id="acceptedDocsCount" class="fw-bold text-success">0</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-stats p-3 bg-white">
+                    <h6 class="text-muted">طلبات عاجلة</h6>
+                    <h3 id="urgentDocsCount" class="fw-bold text-danger">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- شريط البحث والفلترة -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <select id="statusFilter" class="form-select">
+                    <option value="">جميع الحالات</option>
+                    <option value="مقبول">مقبول</option>
+                    <option value="قيد الإنجاز">قيد الإنجاز</option>
+                    <option value="عاجل">عاجل</option>
+                </select>
+            </div>
+            <div class="col-md-8">
+                <input type="text" id="searchInput" class="form-control" placeholder="بحث عن اسم وثيقة...">
+            </div>
+        </div>
+
+        <!-- عرض المستندات -->
+        <div id="documentsContainer" class="row g-3">
+            <p class="text-center text-muted">جاري تحميل المستندات...</p>
+        </div>
+
+    </div>
+
+    <!-- سكربت الجافاسكريبت للاتصال بالسيرفر -->
     <script>
-        const HOST = window.location.hostname || '127.0.0.1';
+        // رابط السيرفر الأساسي المرفوع على Render
         const API_URL = 'https://tourism-backend.onrender.com/api';
-        let rawDocuments = [];
-        const departments = ["الجمعية", "معاملات الشركة", "ديوان السياحة", "أملاك الدولة", "الحماية المدنية"];
-        let activeDept = "الجمعية"; 
 
-        async function fetchActions() {
+        async function fetchData() {
             try {
-                const response = await fetch(`${API_URL}/actions`);
-                if (!response.ok) throw new Error();
-                const actions = await response.json();
-                
-                const container = document.getElementById('actionsContainer');
-                if (!actions || actions.length === 0) {
-                    container.innerHTML = '<p style="color: #9a3412; font-size: 0.88rem;">لا توجد إجراءات مزمعة مسجلة حالياً.</p>';
-                    return;
-                }
+                // جلب المستندات
+                const docsResponse = await fetch(`${API_URL}/documents`);
+                if (!docsResponse.ok) throw new Error('فشل جلب المستندات');
+                const documents = await docsResponse.json();
 
-                container.innerHTML = actions.map(act => {
-                    const title = act.action_title || act.title || 'إجراء مزمع';
-                    const dept = act.department || 'عام';
-                    const dateFormatted = act.remind_date ? act.remind_date.replace('T', ' | الوقت: ') : (act.due_date || 'غير محدد');
+                // جلب الإجراءات المزمعة
+                const actionsResponse = await fetch(`${API_URL}/actions`);
+                if (!actionsResponse.ok) throw new Error('فشل جلب الإجراءات');
+                const actions = await actionsResponse.json();
 
-                    const emailStr = act.email ? `📧 ${act.email}` : '';
-                    const phoneStr = act.phone ? `📱 ${act.phone}` : '';
-                    const contactInfo = [emailStr, phoneStr].filter(Boolean).join(' | ');
+                // إخفاء تنبيه الخطأ إن وجد
+                document.getElementById('connectionAlert').style.display = 'none';
 
-                    return `
-                        <div class="action-item">
-                            <div class="action-item-title">📌 ${title}</div>
-                            <div class="action-item-dept">الجهة المعنية: <strong>${dept}</strong></div>
-                            ${contactInfo ? `<div class="action-item-contact">${contactInfo}</div>` : ''}
-                            <div class="action-item-date">⏰ التاريخ: ${dateFormatted}</div>
-                        </div>
-                    `;
-                }).join('');
-            } catch (err) {
-                console.error('خطأ في جلب الإجراءات المزمعة:', err);
-                document.getElementById('actionsContainer').innerHTML = '<p style="color: #dc2626; font-size: 0.88rem;">⚠️ تعذر جلب الإجراءات المزمعة.</p>';
+                // عرض البيانات في الصفحة
+                renderDocuments(documents);
+                renderActions(actions);
+                updateStats(documents);
+
+            } catch (error) {
+                console.error('خطأ في الاتصال:', error);
+                document.getElementById('connectionAlert').style.display = 'block';
+                document.getElementById('documentsContainer').innerHTML = '<p class="text-center text-danger">⚠️ تعذر جلب المستندات من السيرفر.</p>';
+                document.getElementById('actionsContainer').innerHTML = '<p class="text-center text-danger mb-0">⚠️ تعذر جلب الإجراءات المزمعة.</p>';
             }
-        }
-
-        async function fetchDocuments() {
-            try {
-                const response = await fetch(`${API_URL}/documents`);
-                if (!response.ok) throw new Error(`كود الاستجابة: ${response.status}`);
-                
-                rawDocuments = await response.json();
-                updateStats(rawDocuments);
-                renderButtons(rawDocuments);
-                renderDocuments(rawDocuments);
-
-            } catch (err) {
-                console.error(err);
-                document.getElementById('investorContent').innerHTML = `
-                    <div class="error-box">
-                        ⚠️ تعذر الاتصال بالسيرفر. تأكد من تشغيل <code>node server.js</code> في الـ Terminal.
-                    </div>`;
-            }
-        }
-
-        function updateStats(docs) {
-            document.getElementById('statTotal').innerText = docs.length;
-            
-            const doneCount = docs.filter(d => d.status === 'منجز' || d.status === 'مقبول').length;
-            document.getElementById('statDone').innerText = doneCount;
-
-            const urgentCount = docs.filter(d => d.status === 'مطلب عاجل').length;
-            document.getElementById('statUrgent').innerText = urgentCount;
-        }
-
-        function renderButtons(docs) {
-            const btnContainer = document.getElementById('deptButtonsContainer');
-            let buttonsHtml = '';
-
-            departments.forEach(dept => {
-                const count = docs.filter(d => d.department && d.department.trim() === dept.trim()).length;
-                const isActive = (activeDept === dept) ? 'active' : '';
-
-                buttonsHtml += `
-                    <button class="btn-dept ${isActive}" onclick="toggleDept('${dept}')">
-                        📌 ${dept} <span class="badge-count">${count}</span>
-                    </button>
-                `;
-            });
-
-            btnContainer.innerHTML = buttonsHtml;
-        }
-
-        function toggleDept(deptName) {
-            if (activeDept === deptName) {
-                activeDept = null; 
-            } else {
-                activeDept = deptName; 
-            }
-
-            renderButtons(rawDocuments);
-            updateVisibleCards();
-        }
-
-        function updateVisibleCards() {
-            departments.forEach(dept => {
-                const card = document.getElementById(`dept-card-${dept}`);
-                if (card) {
-                    if (activeDept === dept) {
-                        card.classList.add('visible');
-                    } else {
-                        card.classList.remove('visible');
-                    }
-                }
-            });
         }
 
         function renderDocuments(docs) {
-            const container = document.getElementById('investorContent');
-            let htmlContent = '';
+            const container = document.getElementById('documentsContainer');
+            if (docs.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">لا توجد وثائق متاحة حالياً.</p>';
+                return;
+            }
 
-            departments.forEach(dept => {
-                const deptDocs = docs.filter(d => d.department && d.department.trim() === dept.trim());
-                const isVisibleClass = (activeDept === dept) ? 'visible' : '';
-
-                htmlContent += `
-                    <div class="dept-card ${isVisibleClass}" id="dept-card-${dept}">
-                        <div class="dept-header">
-                            <div class="dept-title">📁 مستندات قسم: ${dept}</div>
-                            <span style="font-size: 0.85rem; color: var(--text-muted);">(${deptDocs.length} ملف)</span>
+            container.innerHTML = docs.map(doc => `
+                <div class="col-md-4">
+                    <div class="card p-3 shadow-sm border-0">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-secondary">${doc.department || 'عام'}</span>
+                            <span class="badge bg-success">${doc.status || 'مقبول'}</span>
                         </div>
-                `;
-
-                if (deptDocs.length === 0) {
-                    htmlContent += `<div class="empty-state">لا توجد مستندات مسجلة في هذا القسم حالياً.</div>`;
-                } else {
-                    deptDocs.forEach(doc => {
-                        const title = doc.document_title || doc.title || 'بدون عنوان';
-                        const status = doc.status || 'قيد الانتظار';
-                        const date = doc.uploaded_at ? doc.uploaded_at.split('T')[0] : (doc.date || 'غير محدد');
-                        
-                        let badgeClass = 'badge-pending';
-                        if (status === 'منجز' || status === 'مقبول') badgeClass = 'badge-done';
-                        if (status === 'مطلب عاجل') badgeClass = 'badge-urgent';
-
-                        const fileLink = doc.file_url || doc.file_path || doc.url || '#';
-
-                        htmlContent += `
-                            <div class="item-row">
-                                <div>
-                                    <div class="doc-title">${title}</div>
-                                    <div class="doc-meta">
-                                        <span class="badge ${badgeClass}">${status}</span>
-                                        <span>📅 ${date}</span>
-                                    </div>
-                                </div>
-                                <a href="${fileLink}" class="btn-file" target="_blank">📄 معاينة المستند</a>
-                            </div>
-                        `;
-                    });
-                }
-
-                htmlContent += `</div>`;
-            });
-
-            container.innerHTML = htmlContent;
+                        <h5 class="fw-bold">${doc.title}</h5>
+                        <p class="text-muted small mb-2">التاريخ: ${new Date(doc.date).toLocaleDateString('ar-TN')}</p>
+                        ${doc.file_url ? `<a href="${doc.file_url}" target="_blank" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-eye"></i> عرض الملف</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function filterData() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const statusVal = document.getElementById('statusFilter').value;
+        function renderActions(actions) {
+            const container = document.getElementById('actionsContainer');
+            if (actions.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center mb-0">لا توجد إجراءات أو تذكيرات قادمة.</p>';
+                return;
+            }
 
-            const filtered = rawDocuments.filter(doc => {
-                const title = (doc.document_title || doc.title || '').toLowerCase();
-                const status = doc.status || '';
-
-                const matchesQuery = title.includes(query);
-                const matchesStatus = (statusVal === 'all') || (status === statusVal);
-
-                return matchesQuery && matchesStatus;
-            });
-
-            renderDocuments(filtered);
+            container.innerHTML = actions.map(action => `
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <strong><i class="fas fa-clock text-warning"></i> ${action.title || action.action_title}</strong>
+                        <span class="badge bg-info text-dark">${action.department}</span>
+                    </div>
+                    <small class="text-muted">موعد التذكير: ${action.remind_date || 'غير محدد'}</small>
+                </div>
+            `).join('');
         }
 
-        // جلب البيانات عند فتح الصفحة
-        window.onload = () => {
-            fetchActions();
-            fetchDocuments();
-        };
+        function updateStats(docs) {
+            document.getElementById('totalDocsCount').innerText = docs.length;
+            document.getElementById('acceptedDocsCount').innerText = docs.filter(d => d.status === 'مقبول').length;
+            document.getElementById('urgentDocsCount').innerText = docs.filter(d => d.status === 'عاجل').length;
+        }
 
-        // كود إضافي لإجبار ظهور زر المعاينة لكل المستندات وتأكيد عملها
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const rows = document.querySelectorAll('.item-row');
-                rows.forEach(row => {
-                    if (!row.querySelector('.btn-file')) {
-                        const actionDiv = document.createElement('div');
-                        actionDiv.innerHTML = `<a href="#" class="btn-file" target="_blank">📄 معاينة المستند</a>`;
-                        row.appendChild(actionDiv);
-                    }
-                });
-            }, 1500);
-        });
+        // تنفيذ الجلب عند تحميل الصفحة
+        window.onload = fetchData;
     </script>
 </body>
 </html>
