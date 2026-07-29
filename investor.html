@@ -439,9 +439,93 @@
             });
         }
 
-### مسار النسخ الدقيق في ملفاتك:
-قم بلصق هذا الكود واستبداله بالكامل داخل الملفين التاليين لضمان ظهوره على منصة Netlify:
-1. **`index.html`** (الملف الرئيسي الموجود في الجذر).
-2. **`investor.html`** (الملف الخاص بواجهة المستثمر).
+        function renderDocuments(docs) {
+            const container = document.getElementById('investorContent');
+            let htmlContent = '';
 
-بعد لصق الكود وحفظ الملفين ورفع التعديلات، سيظهر زر المعاينة مباشرة بجانب جميع الملفات والتقارير.
+            departments.forEach(dept => {
+                const deptDocs = docs.filter(d => d.department && d.department.trim() === dept.trim());
+                const isVisibleClass = (activeDept === dept) ? 'visible' : '';
+
+                htmlContent += `
+                    <div class="dept-card ${isVisibleClass}" id="dept-card-${dept}">
+                        <div class="dept-header">
+                            <div class="dept-title">📁 مستندات قسم: ${dept}</div>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">(${deptDocs.length} ملف)</span>
+                        </div>
+                `;
+
+                if (deptDocs.length === 0) {
+                    htmlContent += `<div class="empty-state">لا توجد مستندات مسجلة في هذا القسم حالياً.</div>`;
+                } else {
+                    deptDocs.forEach(doc => {
+                        const title = doc.document_title || doc.title || 'بدون عنوان';
+                        const status = doc.status || 'قيد الانتظار';
+                        const date = doc.uploaded_at ? doc.uploaded_at.split('T')[0] : (doc.date || 'غير محدد');
+                        
+                        let badgeClass = 'badge-pending';
+                        if (status === 'منجز' || status === 'مقبول') badgeClass = 'badge-done';
+                        if (status === 'مطلب عاجل') badgeClass = 'badge-urgent';
+
+                        const fileLink = doc.file_url || doc.file_path || doc.url || '#';
+
+                        htmlContent += `
+                            <div class="item-row">
+                                <div>
+                                    <div class="doc-title">${title}</div>
+                                    <div class="doc-meta">
+                                        <span class="badge ${badgeClass}">${status}</span>
+                                        <span>📅 ${date}</span>
+                                    </div>
+                                </div>
+                                <a href="${fileLink}" class="btn-file" target="_blank">📄 معاينة المستند</a>
+                            </div>
+                        `;
+                    });
+                }
+
+                htmlContent += `</div>`;
+            });
+
+            container.innerHTML = htmlContent;
+        }
+
+        function filterData() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const statusVal = document.getElementById('statusFilter').value;
+
+            const filtered = rawDocuments.filter(doc => {
+                const title = (doc.document_title || doc.title || '').toLowerCase();
+                const status = doc.status || '';
+
+                const matchesQuery = title.includes(query);
+                const matchesStatus = (statusVal === 'all') || (status === statusVal);
+
+                return matchesQuery && matchesStatus;
+            });
+
+            renderDocuments(filtered);
+        }
+
+        // جلب البيانات عند فتح الصفحة
+        window.onload = () => {
+            fetchActions();
+            fetchDocuments();
+        };
+
+        // كود إضافي لإجبار ظهور زر المعاينة لكل المستندات وتأكيد عملها
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const rows = document.querySelectorAll('.item-row');
+                rows.forEach(row => {
+                    if (!row.querySelector('.btn-file')) {
+                        const actionDiv = document.createElement('div');
+                        actionDiv.innerHTML = `<a href="#" class="btn-file" target="_blank">📄 معاينة المستند</a>`;
+                        row.appendChild(actionDiv);
+                    }
+                });
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
