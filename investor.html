@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة المستثمر - منصة متابعة المشاريع</title>
+    <!-- خط Tajawal لاضفاء مظهر عصري ورسمي -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success-bg: #dcfce7;
+            --success-text: #15803d;
+            --warning-bg: #fef3c7;
+            --warning-text: #b45309;
+            --danger-bg: #fee2e2;
+            --danger-text: #b91c1c;
+        }
+
+        * { box-sizing: border-box; font-family: 'Tajawal', system-ui, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg); color: var(--text-main); padding: 30px 20px; line-height: 1.5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* Header */
+        .header { 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+            color: white; 
+            padding: 30px; 
+            border-radius: 16px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+            margin-bottom: 25px;
+        }
+        .header h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+        .header p { color: #94a3b8; font-size: 0.95rem; }
+
+        /* KPI Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 18px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-card .val { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+        .stat-card .lbl { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Controls Section */
+        .controls-card {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-input, .filter-select {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input { flex: 1; min-width: 200px; }
+        .search-input:focus, .filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+        /* Horizontal Floating Buttons Bar */
+        .nav-buttons-container {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            scrollbar-width: thin;
+        }
+        .nav-buttons-container::-webkit-scrollbar { height: 6px; }
+        .nav-buttons-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .btn-dept {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            user-select: none;
+        }
+
+        .btn-dept:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
+        }
+
+        .btn-dept.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+        }
+
+        .btn-dept .badge-count {
+            background: #e2e8f0;
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .btn-dept.active .badge-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        /* Department Content Cards */
+        .dept-card { 
+            background: var(--card-bg); 
+            border-radius: 14px; 
+            padding: 24px; 
+            margin-bottom: 20px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03); 
+            display: none; 
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .dept-card.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dept-header { 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #f1f5f9; 
+            padding-bottom: 12px; 
+            margin-bottom: 16px; 
+        }
+        .dept-title { font-size: 1.15rem; font-weight: 700; color: var(--primary); }
+
+        /* Document Item Rows */
+        .item-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px 16px; 
+            border-radius: 8px;
+            background: #fafafa;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .item-row:last-child { margin-bottom: 0; }
+        .item-row:hover { transform: translateX(-3px); background: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
+
+        .doc-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 4px; }
+        .doc-meta { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--text-muted); }
+
+        /* Badges */
+        .badge { padding: 3px 9px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
+        .badge-done { background: var(--success-bg); color: var(--success-text); }
+        .badge-pending { background: var(--warning-bg); color: var(--warning-text); }
+        .badge-urgent { background: var(--danger-bg); color: var(--danger-text); }
+
+        /* Buttons */
+        .btn-file { 
+            background: var(--accent); 
+            color: white; 
+            padding: 7px 14px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-size: 0.82rem; 
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-file:hover { background: var(--accent-hover); }
+
+        .empty-state { text-align: center; color: var(--text-muted); padding: 15px 0; font-size: 0.9rem; }
+        .error-box { background: var(--danger-bg); color: var(--danger-text); padding: 20px; border-radius: 12px; text-align: center; font-weight: 500; }
+
+        /* 🔔 تنسيقات قسم الإجراءات المزمعة والتذكيرات */
+        .actions-card {
+            background: #fff8f1;
+            border: 1px solid #ffedd5;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .actions-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #c2410c;
+            border-bottom: 2px solid #ffedd5;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+        .action-item {
+            background: #ffffff;
+            border: 1px solid #fed7aa;
+            border-right: 5px solid #f97316;
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+        .action-item-title { font-weight: 700; font-size: 0.95rem; color: #9a3412; margin-bottom: 4px; }
+        .action-item-dept { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
+        .action-item-contact { font-size: 0.78rem; color: var(--accent); margin-bottom: 6px; font-weight: 500; word-break: break-all; }
+        .action-item-date { 
+            font-size: 0.78rem; 
+            font-weight: 700; 
+            color: #c2410c; 
+            background: #ffedd5; 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h2>💼 بوابة المستثمر - متابعة المشاريع والوثائق</h2>
+            <p>انقر على أي قسم لعرض المستندات والوثائق الخاصة به</p>
+        </div>
+
+        <!-- 🔔 قسم عرض الإجراءات المزمعة والتذكيرات القادمة -->
+        <div class="actions-card">
+            <div class="actions-title">🔔 الإجراءات المزمعة والتذكيرات القادمة</div>
+            <div id="actionsContainer" class="actions-grid">
+                <p style="color: var(--text-muted); font-size: 0.88rem;">⏳ جاري جلب الإجراءات المزمعة...</p>
+            </div>
+        </div>
+
+        <!-- KPI Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>
+                    <div class="lbl">إجمالي الوثائق</div>
+                    <div class="val" id="statTotal">0</div>
+                </div>
+                <div style="font-size: 2rem;">📁</div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <div class="lbl">المستندات المقبولة</div>
+                    <div class="val" id="statDone" style="color: var(--success-text);">0</div>
+                </div>
+                <div style="font-size: 2rem;">✅</div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <div class="lbl">طلبات عاجلة</div>
+                    <div class="val" id="statUrgent" style="color: var(--danger-text);">0</div>
+                </div>
+                <div style="font-size: 2rem;">🚨</div>
+            </div>
+        </div>
+
+        <!-- Search / Filter -->
+        <div class="controls-card">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث عن اسم وثيقة..." oninput="filterData()">
+            <select id="statusFilter" class="filter-select" onchange="filterData()">
+                <option value="all">جميع الحالات</option>
+                <option value="مقبول">مقبول / منجز</option>
+                <option value="مطلب عاجل">مطلب عاجل</option>
+                <option value="قيد الانتظار">قيد الانتظار</option>
+            </select>
+        </div>
+
+        <!-- Horizontal Buttons Bar -->
+        <div class="nav-buttons-container" id="deptButtonsContainer">
+            <!-- سيتم توليد الأزرار الأفقية هنا ديناميكياً -->
+        </div>
+
+        <!-- Dynamic Content Container -->
+        <div id="investorContent">
+            <p style="text-align: center; color: var(--text-muted); padding: 40px 0;">⏳ جاري جلب الوثائق والمستندات...</p>
+        </div>
+    </div>
+
+    <script>
+        const HOST = window.location.hostname || '127.0.0.1';
+        const API_URL = 'https://tourisme-tatoooine.onrender.com/api';
+        let rawDocuments = [];
+        const departments = ["الجمعية", "معاملات الشركة", "ديوان السياحة", "أملاك الدولة", "الحماية المدنية"];
+        
+        // القسم النشط حالياً ( افتراضياً الأول: "الجمعية" )
+        let activeDept = "الجمعية"; 
+
+        // دالة جلب وعرض الإجراءات المزمعة
+        async function fetchActions() {
+            try {
+                const response = await fetch(`${API_URL}/actions`);
+                if (!response.ok) throw new Error();
+                const actions = await response.json();
+                
+                const container = document.getElementById('actionsContainer');
+                if (!actions || actions.length === 0) {
+                    container.innerHTML = '<p style="color: #9a3412; font-size: 0.88rem;">لا توجد إجراءات مزمعة مسجلة حالياً.</p>';
+                    return;
+                }
+
+                container.innerHTML = actions.map(act => {
+                    const title = act.action_title || act.title || 'إجراء مزمع';
+                    const dept = act.department || 'عام';
+                    const dateFormatted = act.remind_date ? act.remind_date.replace('T', ' | الوقت: ') : (act.due_date || 'غير محدد');
+
+                    // تجهيز عرض الإيميل والهاتف
+                    const emailStr = act.email ? `📧 ${act.email}` : '';
+                    const phoneStr = act.phone ? `📱 ${act.phone}` : '';
+                    const contactInfo = [emailStr, phoneStr].filter(Boolean).join(' | ');
+
+                    return `
+                        <div class="action-item">
+                            <div class="action-item-title">📌 ${title}</div>
+                            <div class="action-item-dept">الجهة المعنية: <strong>${dept}</strong></div>
+                            ${contactInfo ? `<div class="action-item-contact">${contactInfo}</div>` : ''}
+                            <div class="action-item-date">⏰ التاريخ: ${dateFormatted}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('خطأ في جلب الإجراءات المزمعة:', err);
+                document.getElementById('actionsContainer').innerHTML = '<p style="color: #dc2626; font-size: 0.88rem;">⚠️ تعذر جلب الإجراءات المزمعة.</p>';
+            }
+        }
+
+        async function fetchDocuments() {
+            try {
+                const response = await fetch(`${API_URL}/documents`);
+                if (!response.ok) throw new Error(`كود الاستجابة: ${response.status}`);
+                
+                rawDocuments = await response.json();
+                updateStats(rawDocuments);
+                renderButtons(rawDocuments);
+                renderDocuments(rawDocuments);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('investorContent').innerHTML = `
+                    <div class="error-box">
+                        ⚠️ تعذر الاتصال بالسيرفر. تأكد من تشغيل <code>node server.js</code> في الـ Terminal.
+                    </div>`;
+            }
+        }
+
+        function updateStats(docs) {
+            document.getElementById('statTotal').innerText = docs.length;
+            
+            const doneCount = docs.filter(d => d.status === 'منجز' || d.status === 'مقبول').length;
+            document.getElementById('statDone').innerText = doneCount;
+
+            const urgentCount = docs.filter(d => d.status === 'مطلب عاجل').length;
+            document.getElementById('statUrgent').innerText = urgentCount;
+        }
+
+        // بناء الأزرار الأفقية العائمة
+        function renderButtons(docs) {
+            const btnContainer = document.getElementById('deptButtonsContainer');
+            let buttonsHtml = '';
+
+            departments.forEach(dept => {
+                const count = docs.filter(d => d.department && d.department.trim() === dept.trim()).length;
+                const isActive = (activeDept === dept) ? 'active' : '';
+
+                buttonsHtml += `
+                    <button class="btn-dept ${isActive}" onclick="toggleDept('${dept}')">
+                        📌 ${dept} <span class="badge-count">${count}</span>
+                    </button>
+                `;
+            });
+
+            btnContainer.innerHTML = buttonsHtml;
+        }
+
+        // التبديل بين الأقسام (إغلاق السلسلة السابقة وفتح القسم المحدد فقط)
+        function toggleDept(deptName) {
+            if (activeDept === deptName) {
+                activeDept = null; // إغلاق القسم عند التبويب عليه مجدداً
+            } else {
+                activeDept = deptName; // فتح القسم الجديد وإخفاء الأقسام الأخرى
+            }
+
+            renderButtons(rawDocuments);
+            updateVisibleCards();
+        }
+
+        function updateVisibleCards() {
+            departments.forEach(dept => {
+                const card = document.getElementById(`dept-card-${dept}`);
+                if (card) {
+                    if (activeDept === dept) {
+                        card.classList.add('visible');
+                    } else {
+                        card.classList.remove('visible');
+                    }
+                }
+            });
+        }
+
+        function renderDocuments(documents) {
+            const container = document.getElementById('investorContent');
+            container.innerHTML = '';
+
+            departments.forEach(dept => {
+                const deptDocs = documents.filter(d => d.department && d.department.trim() === dept.trim());
+                
+                let docsListHtml = '';
+                if (deptDocs.length === 0) {
+                    docsListHtml = '<div class="empty-state">لا توجد وثائق مسجلة في هذا القسم.</div>';
+                } else {
+                    docsListHtml = deptDocs.map(doc => {
+                        let badgeClass = 'badge-pending';
+                        if (doc.status === 'منجز' || doc.status === 'مقبول') badgeClass = 'badge-done';
+                        if (doc.status === 'مطلب عاجل') badgeClass = 'badge-urgent';
+
+                        let dateStr = 'غير محدد';
+                        if (doc.due_date) {
+                            try { dateStr = new Date(doc.due_date).toISOString().split('T')[0]; } 
+                            catch (e) { dateStr = doc.due_date; }
+                        }
+
+                        return `
+                            <div class="item-row">
+                                <div>
+                                    <div class="doc-title">${doc.title}</div>
+                                    <div class="doc-meta">
+                                        <span>📅 ${dateStr}</span>
+                                        <span class="badge ${badgeClass}">${doc.status || 'قيد الانتظار'}</span>
+                                    </div>
+                                </div>
+                                ${doc.file_url ? `
+                                    <a href="${doc.file_url}" target="_blank" class="btn-file">
+                                        <span>👁️ معاينة المستند</span>
+                                    </a>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                const isVisible = (activeDept === dept) ? 'visible' : '';
+
+                container.innerHTML += `
+                    <div class="dept-card ${isVisible}" id="dept-card-${dept}">
+                        <div class="dept-header">
+                            <div class="dept-title">📌 ${dept}</div>
+                        </div>
+                        <div>
+                            ${docsListHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusTerm = document.getElementById('statusFilter').value;
+
+            const filtered = rawDocuments.filter(doc => {
+                const matchesSearch = doc.title && doc.title.toLowerCase().includes(searchTerm);
+                
+                let matchesStatus = true;
+                if (statusTerm !== 'all') {
+                    if (statusTerm === 'مقبول') matchesStatus = (doc.status === 'مقبول' || doc.status === 'منجز');
+                    else matchesStatus = (doc.status === statusTerm);
+                }
+
+                return matchesSearch && matchesStatus;
+            });
+
+            renderButtons(filtered);
+            renderDocuments(filtered);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchActions();
+            fetchDocuments();
+        });
+    </script>
+</body>
+</html>
