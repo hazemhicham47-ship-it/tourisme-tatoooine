@@ -37,7 +37,7 @@ const ActionSchema = new mongoose.Schema({
     title: { type: String, required: true },
     action_title: { type: String },
     department: { type: String, required: true },
-    remind_date: { type: String }, // صيغة: YYYY-MM-DDTHH:mm
+    remind_date: { type: String }, // صيغة دقيقة: YYYY-MM-DDTHH:mm
     email: { type: String },
     phone: { type: String },
     sent: { type: Boolean, default: false },
@@ -161,8 +161,22 @@ app.get('/api/actions', async (req, res) => {
 
 app.post('/api/actions', async (req, res) => {
     try {
-        console.log(`📥 تم استقبال إجراء جديد بوقت تذكير: ${req.body.remind_date}`);
-        const newAction = new Action({ ...req.body, sent: false });
+        let formattedRemindDate = req.body.remind_date;
+        
+        // تنظيف وتوحيد صيغة التاريخ لحذف أي ثوانٍ أو زوائد قد تسبب إرسالاً فورياً
+        if (formattedRemindDate) {
+            // تحويل الصيغة من "YYYY-MM-DD HH:mm:ss" أو ما شابه إلى "YYYY-MM-DDTHH:mm" بدقة
+            formattedRemindDate = formattedRemindDate.replace(' ', 'T').substring(0, 16);
+        }
+
+        console.log(`📥 تم استقبال إجراء جديد بوقت تذكير موحد: ${formattedRemindDate}`);
+
+        const newAction = new Action({ 
+            ...req.body, 
+            remind_date: formattedRemindDate,
+            sent: false 
+        });
+        
         const saved = await newAction.save();
         res.status(201).json(saved);
     } catch (err) {
