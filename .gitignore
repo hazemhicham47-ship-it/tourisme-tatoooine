@@ -1,0 +1,7 @@
+node_modules/
+uploads/
+.env
+*.env
+atlas-credentials*.env
+google-credentials.json
+credentials.json
