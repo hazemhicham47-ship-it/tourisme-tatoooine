@@ -63,14 +63,21 @@ const ActionSchema = new mongoose.Schema({
 const Action = mongoose.model('Action', ActionSchema);
 
 // ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Nodemailer
+// ✉️ إعداد خدمة إرسال البريد الإلكتروني (معدل لحل مشكلة الاتصال)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // نستخدم true للمنفذ 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    socketTimeout: 10000, // إضافة مهلة زمنية
+    connectionTimeout: 10000,
+    tls: {
+        rejectUnauthorized: false // لتجاوز مشاكل الشهادات أحياناً
     }
 });
-
 // --- المسارات (Routes) ---
 
 app.post('/api/login', (req, res) => {
