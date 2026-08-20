@@ -55,7 +55,7 @@ const ActionSchema = new mongoose.Schema({
     title: { type: String, required: true },
     action_title: { type: String },
     department: { type: String, required: true },
-    remind_date: { type: String }, // صيغة التاريخ المتوقعة من الواجهة مثال: "2026-08-20T11:26" أو صيغة مناسبة للمقارنة
+    remind_date: { type: String }, // صيغة التاريخ المتوقعة من الواجهة مثال: "2026-08-20T11:26"
     email: { type: String },
     phone: { type: String },
     email_sent: { type: Boolean, default: false }, // لتتبع هل تم إرسال الإيميل أم لا
@@ -63,18 +63,23 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// ⏰ نظام الجدولة (Cron Job) للتحقق وإرسال الإيميلات في وقتها المحدد كل دقيقة
+// ⏰ نظام الجدولة (Cron Job) المحدث بدقة للمقارنة الرقمية وطباعة السجلات
 cron.schedule('* * * * *', async () => {
     try {
-        const now = new Date();
-        // جلب الإجراءات التي بها بريد إلكتروني ولم يُرسل لها إيميل بعد
+        const now = Date.now(); // الوقت الحالي بالمللي ثانية
         const pendingActions = await Action.find({ email: { $exists: true, $ne: "" }, email_sent: false });
 
         for (const action of pendingActions) {
             if (!action.remind_date) continue;
 
-            const remindTime = new Date(action.remind_date);
-            // إذا حان وقت التذكير أو تجاوزه
+            const remindTime = new Date(action.remind_date).getTime();
+            
+            // طباعة سجلات الفحص لمعرفة حالة الوقت المتبقي للإرسال
+            console.log(`⏳ فحص الإجراء ${action._id} | وقت التذكير: ${action.remind_date} | باقي للإرسال: ${Math.floor((remindTime - now) / 1000)} ثانية`);
+
+            if (isNaN(remindTime)) continue;
+
+            // إذا حان الوقت أو تجاوزه
             if (now >= remindTime) {
                 const emailData = {
                     sender: { name: "Tataouine Platform", email: process.env.EMAIL_USER || "no-reply@tataouine.com" },
@@ -226,7 +231,7 @@ app.get('/api/actions', async (req, res) => {
     }
 });
 
-// الحفظ فقط دون إرسال فوري (نظام الجدولة سيتكفل بالإرسال في وقته)
+// الحفظ فقط دون إرسال فوري
 app.post('/api/actions', async (req, res) => {
     try {
         const actionData = { ...req.body, email_sent: false };
