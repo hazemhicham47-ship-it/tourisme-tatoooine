@@ -64,19 +64,20 @@ const Action = mongoose.model('Action', ActionSchema);
 
 // ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Nodemailer
 // ✉️ إعداد خدمة إرسال البريد الإلكتروني (معدل لحل مشكلة الاتصال)
+// ✉️ إعداد خدمة إرسال البريد الإلكتروني (فرض استخدام IPv4)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
-    secure: true, // نستخدم true للمنفذ 465
+    secure: true,
+    family: 4, // <-- هذا السطر هو الأهم: يجبر Node.js على استخدام IPv4 فقط
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    socketTimeout: 10000, // إضافة مهلة زمنية
-    connectionTimeout: 10000,
     tls: {
-        rejectUnauthorized: false // لتجاوز مشاكل الشهادات أحياناً
-    }
+        rejectUnauthorized: false
+    },
+    connectionTimeout: 15000
 });
 // --- المسارات (Routes) ---
 
