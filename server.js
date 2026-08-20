@@ -67,11 +67,18 @@ const ActionSchema = new mongoose.Schema({
 const Action = mongoose.model('Action', ActionSchema);
 
 // ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Gmail
+// ✉️ إعداد خدمة إرسال البريد الإلكتروني (ضبط يدوي لفرض IPv4 ومحاربة حظر المنفذ)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    family: 4, // ⚠️ هذا السطر هو السر: يجبر مكتبة nodemailer بالكامل على استخدام IPv4 فقط وتجاهل IPv6
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
