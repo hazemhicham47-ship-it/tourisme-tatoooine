@@ -4,7 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const SibApiV3Sdk = require('@getbrevo/brevo');
+const Brevo = require('@getbrevo/brevo');
 require('dotenv').config();
 
 const app = express();
@@ -62,10 +62,9 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Brevo API (تتخطى مشاكل منافذ SMTP و IPv6 تماماً)
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-let apiKey = apiInstance.authentications['apiKey'];
-apiKey.apiKey = process.env.BREVO_API_KEY;
+// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Brevo API (تم ضبطها بالطريقة الصحيحة المتوافقة مع الإصدار الحديث)
+const apiInstance = new Brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
 // --- المسارات (Routes) ---
 
@@ -186,7 +185,7 @@ app.post('/api/actions', async (req, res) => {
 
         // إرسال الإيميل تلقائياً عبر Brevo API عند توفر بريد إلكتروني
         if (req.body.email) {
-            const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+            const sendSmtpEmail = new Brevo.SendSmtpEmail();
             sendSmtpEmail.subject = `تنبيه إجراء مزمع: ${req.body.title || req.body.action_title || 'بدون عنوان'}`;
             sendSmtpEmail.htmlContent = `
                 <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; border-radius: 8px;">
@@ -203,7 +202,7 @@ app.post('/api/actions', async (req, res) => {
 
             apiInstance.sendTransacEmail(sendSmtpEmail).then((data) => {
                 console.log("✅ تم إرسال البريد بنجاح عبر Brevo API:", data);
-            }, (error) => {
+            }).catch((error) => {
                 console.error("❌ خطأ في إرسال البريد عبر Brevo:", error);
             });
         }
