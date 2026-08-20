@@ -399,24 +399,29 @@
         });
 
         document.getElementById('addDocForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            try {
-                const res = await fetch(`${API_URL}/documents`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if (res.ok) {
-                    Swal.fire('تمت الإضافة!', 'تم حفظ الوثيقة بنجاح', 'success');
-                    e.target.reset();
-                    fetchDocs();
-                } else {
-                    throw new Error();
-                }
-            } catch (err) { Swal.fire('خطأ', 'فشل الحفظ', 'error'); }
+    e.preventDefault();
+    
+    // استخدام FormData مباشرة لإرسال النصوص والملف معاً بشكل صحيح
+    const formData = new FormData(e.target);
+
+    try {
+        const res = await fetch(`${API_URL}/documents`, {
+            method: 'POST',
+            body: formData // إرسال الـ FormData مباشرة بدون headers وبدون JSON.stringify
         });
+        
+        if (res.ok) {
+            Swal.fire('تمت الإضافة!', 'تم حفظ الوثيقة مع الملف بنجاح', 'success');
+            e.target.reset();
+            fetchDocs();
+        } else {
+            const errData = await res.json();
+            throw new Error(errData.details || 'فشل الحفظ');
+        }
+    } catch (err) { 
+        Swal.fire('خطأ', err.message || 'فشل الحفظ', 'error'); 
+    }
+});
 
         async function updateStatus(id) {
             const { value: newStatus } = await Swal.fire({
