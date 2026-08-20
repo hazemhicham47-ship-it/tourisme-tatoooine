@@ -4,7 +4,6 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const Brevo = require('@getbrevo/brevo');
 require('dotenv').config();
 
 const app = express();
@@ -61,10 +60,6 @@ const ActionSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now }
 });
 const Action = mongoose.model('Action', ActionSchema);
-
-// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Brevo API (تم ضبطها بالطريقة الصحيحة المتوافقة مع الإصدار الحديث)
-const apiInstance = new Brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
 // --- المسارات (Routes) ---
 
@@ -183,28 +178,36 @@ app.post('/api/actions', async (req, res) => {
         const newAction = new Action(req.body);
         const saved = await newAction.save();
 
-        // إرسال الإيميل تلقائياً عبر Brevo API عند توفر بريد إلكتروني
+        // إرسال الإيميل تلقائياً عبر Brevo HTTP API مباشرة لتجنب أخطاء الحزم
         if (req.body.email) {
-            const sendSmtpEmail = new Brevo.SendSmtpEmail();
-            sendSmtpEmail.subject = `تنبيه إجراء مزمع: ${req.body.title || req.body.action_title || 'بدون عنوان'}`;
-            sendSmtpEmail.htmlContent = `
-                <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; border-radius: 8px;">
-                    <h2 style="color: #1e293b;">⏰ تذكير بإجراء مزمع جديد</h2>
-                    <p><strong>عنوان الإجراء:</strong> ${req.body.title || req.body.action_title}</p>
-                    <p><strong>الجهة / القسم:</strong> ${req.body.department}</p>
-                    <p><strong>وقت التذكير المحدد:</strong> ${req.body.remind_date}</p>
-                    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-                    <p style="color: #64748b; font-size: 0.85rem;">تم إرسال هذا التنبيه تلقائياً عبر لوحة التحكم.</p>
-                </div>
-            `;
-            sendSmtpEmail.sender = { name: "Tataouine Platform", email: process.env.EMAIL_USER || "no-reply@tataouine.com" };
-            sendSmtpEmail.to = [{ email: req.body.email }];
+            const emailData = {
+                sender: { name: "Tataouine Platform", email: process.env.EMAIL_USER || "no-reply@tataouine.com" },
+                to: [{ email: req.body.email }],
+                subject: `تنبيه إجراء مزمع: ${req.body.title || req.body.action_title || 'بدون عنوان'}`,
+                htmlContent: `
+                    <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; border-radius: 8px;">
+                        <h2 style="color: #1e293b;">⏰ تذكير بإجراء مزمع جديد</h2>
+                        <p><strong>عنوان الإجراء:</strong> ${req.body.title || req.body.action_title}</p>
+                        <p><strong>الجهة / القسم:</strong> ${req.body.department}</p>
+                        <p><strong>وقت التذكير المحدد:</strong> ${req.body.remind_date}</p>
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                        <p style="color: #64748b; font-size: 0.85rem;">تم إرسال هذا التنبيه تلقائياً عبر لوحة التحكم.</p>
+                    </div>
+                `
+            };
 
-            apiInstance.sendTransacEmail(sendSmtpEmail).then((data) => {
-                console.log("✅ تم إرسال البريد بنجاح عبر Brevo API:", data);
-            }).catch((error) => {
-                console.error("❌ خطأ في إرسال البريد عبر Brevo:", error);
-            });
+            fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify(emailData)
+            })
+            .then(response => response.json())
+            .then(data => console.log("✅ تم إرسال البريد بنجاح عبر Brevo API:", data))
+            .catch(error => console.error("❌ خطأ في إرسال البريد عبر Brevo:", error));
         }
 
         res.status(201).json(saved);
