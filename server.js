@@ -5,7 +5,11 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const dns = require('dns');
 require('dotenv').config();
+
+// فرض استخدام IPv4 لحل مشاكل اتصال شبكة الاستضافة مع خوادم Gmail
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 
@@ -62,16 +66,15 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Nodemailer
-// ✉️ إعداد خدمة إرسال البريد الإلكتروني (معدل لحل مشكلة الاتصال)
-// ✉️ إعداد خدمة إرسال البريد الإلكتروني (فرض استخدام IPv4)
+// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Gmail
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // استخدام service: 'gmail' هو الأضمن
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
 });
+
 // --- المسارات (Routes) ---
 
 app.post('/api/login', (req, res) => {
