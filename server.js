@@ -1,3 +1,4 @@
+const nodemailer = require('nodemailer');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -60,6 +61,15 @@ const ActionSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now }
 });
 const Action = mongoose.model('Action', ActionSchema);
+
+// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 // --- المسارات (Routes) ---
 
@@ -177,6 +187,34 @@ app.post('/api/actions', async (req, res) => {
     try {
         const newAction = new Action(req.body);
         const saved = await newAction.save();
+
+        // إرسال الإيميل تلقائياً عند جدولة التنبيه في حال توفر بريد إلكتروني
+        if (req.body.email) {
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: req.body.email,
+                subject: `تنبيه إجراء مزمع: ${req.body.title || req.body.action_title || 'بدون عنوان'}`,
+                html: `
+                    <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; border-radius: 8px;">
+                        <h2 style="color: #1e293b;">⏰ تذكير بإجراء مزمع جديد</h2>
+                        <p><strong>عنوان الإجراء:</strong> ${req.body.title || req.body.action_title}</p>
+                        <p><strong>الجهة / القسم:</strong> ${req.body.department}</p>
+                        <p><strong>وقت التذكير المحدد:</strong> ${req.body.remind_date}</p>
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                        <p style="color: #64748b; font-size: 0.85rem;">تم إرسال هذا التنبيه تلقائياً عبر لوحة التحكم.</p>
+                    </div>
+                `
+            };
+
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error("❌ خطأ في إرسال البريد الإلكتروني:", error);
+                } else {
+                    console.log("✅ تم إرسال البريد بنجاح:", info.response);
+                }
+            });
+        }
+
         res.status(201).json(saved);
     } catch (err) {
         console.error("❌ خطأ في إضافة الإجراء:", err);
