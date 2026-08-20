@@ -63,7 +63,7 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// ⏰ نظام الجدولة (Cron Job) المحدث بدقة للمقارنة الرقمية وطباعة السجلات
+// ⏰ نظام الجدولة (Cron Job) المعدل ليتوافق مع التوقيت المحلي لتونس وتجنب فارق السيرفر (UTC)
 cron.schedule('* * * * *', async () => {
     try {
         const now = Date.now(); // الوقت الحالي بالمللي ثانية
@@ -72,10 +72,12 @@ cron.schedule('* * * * *', async () => {
         for (const action of pendingActions) {
             if (!action.remind_date) continue;
 
-            const remindTime = new Date(action.remind_date).getTime();
+            // ضبط التوقيت المحلي بإضافة فارق تونس (+01:00) لتحويله بشكل صحيح على سيرفرات UTC
+            const localDateStr = action.remind_date.replace(' ', 'T') + '+01:00';
+            const remindTime = new Date(localDateStr).getTime();
             
             // طباعة سجلات الفحص لمعرفة حالة الوقت المتبقي للإرسال
-            console.log(`⏳ فحص الإجراء ${action._id} | وقت التذكير: ${action.remind_date} | باقي للإرسال: ${Math.floor((remindTime - now) / 1000)} ثانية`);
+            console.log(`⏳ فحص الإجراء ${action._id} | وقت التذكير المحلي: ${action.remind_date} | باقي للإرسال: ${Math.floor((remindTime - now) / 1000)} ثانية`);
 
             if (isNaN(remindTime)) continue;
 
