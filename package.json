@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.3",
     "body-parser": "^2.3.0",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",

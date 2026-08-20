@@ -1,15 +1,11 @@
-const nodemailer = require('nodemailer');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const dns = require('dns');
+const SibApiV3Sdk = require('@getbrevo/brevo');
 require('dotenv').config();
-
-// فرض استخدام IPv4 لحل مشاكل اتصال شبكة الاستضافة مع خوادم Gmail
-dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 
@@ -66,21 +62,10 @@ const ActionSchema = new mongoose.Schema({
 });
 const Action = mongoose.model('Action', ActionSchema);
 
-// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Gmail
-// ✉️ إعداد خدمة إرسال البريد الإلكتروني (ضبط يدوي لفرض IPv4 ومحاربة حظر المنفذ)
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4, // ⚠️ هذا السطر هو السر: يجبر مكتبة nodemailer بالكامل على استخدام IPv4 فقط وتجاهل IPv6
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    }
-});
+// ✉️ إعداد خدمة إرسال البريد الإلكتروني عبر Brevo API (تتخطى مشاكل منافذ SMTP و IPv6 تماماً)
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+let apiKey = apiInstance.authentications['apiKey'];
+apiKey.apiKey = process.env.BREVO_API_KEY;
 
 // --- المسارات (Routes) ---
 
@@ -199,30 +184,27 @@ app.post('/api/actions', async (req, res) => {
         const newAction = new Action(req.body);
         const saved = await newAction.save();
 
-        // إرسال الإيميل تلقائياً عند جدولة التنبيه في حال توفر بريد إلكتروني
+        // إرسال الإيميل تلقائياً عبر Brevo API عند توفر بريد إلكتروني
         if (req.body.email) {
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: req.body.email,
-                subject: `تنبيه إجراء مزمع: ${req.body.title || req.body.action_title || 'بدون عنوان'}`,
-                html: `
-                    <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; border-radius: 8px;">
-                        <h2 style="color: #1e293b;">⏰ تذكير بإجراء مزمع جديد</h2>
-                        <p><strong>عنوان الإجراء:</strong> ${req.body.title || req.body.action_title}</p>
-                        <p><strong>الجهة / القسم:</strong> ${req.body.department}</p>
-                        <p><strong>وقت التذكير المحدد:</strong> ${req.body.remind_date}</p>
-                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-                        <p style="color: #64748b; font-size: 0.85rem;">تم إرسال هذا التنبيه تلقائياً عبر لوحة التحكم.</p>
-                    </div>
-                `
-            };
+            const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+            sendSmtpEmail.subject = `تنبيه إجراء مزمع: ${req.body.title || req.body.action_title || 'بدون عنوان'}`;
+            sendSmtpEmail.htmlContent = `
+                <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; border-radius: 8px;">
+                    <h2 style="color: #1e293b;">⏰ تذكير بإجراء مزمع جديد</h2>
+                    <p><strong>عنوان الإجراء:</strong> ${req.body.title || req.body.action_title}</p>
+                    <p><strong>الجهة / القسم:</strong> ${req.body.department}</p>
+                    <p><strong>وقت التذكير المحدد:</strong> ${req.body.remind_date}</p>
+                    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                    <p style="color: #64748b; font-size: 0.85rem;">تم إرسال هذا التنبيه تلقائياً عبر لوحة التحكم.</p>
+                </div>
+            `;
+            sendSmtpEmail.sender = { name: "Tataouine Platform", email: process.env.EMAIL_USER || "no-reply@tataouine.com" };
+            sendSmtpEmail.to = [{ email: req.body.email }];
 
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error("❌ خطأ في إرسال البريد الإلكتروني:", error);
-                } else {
-                    console.log("✅ تم إرسال البريد بنجاح:", info.response);
-                }
+            apiInstance.sendTransacEmail(sendSmtpEmail).then((data) => {
+                console.log("✅ تم إرسال البريد بنجاح عبر Brevo API:", data);
+            }, (error) => {
+                console.error("❌ خطأ في إرسال البريد عبر Brevo:", error);
             });
         }
 
